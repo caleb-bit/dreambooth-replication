@@ -2,9 +2,7 @@
 
 Ryan Qiu, Gordon Mei, Caleb Shim, Evan Cui
 
-Here's how I structured the repository
-
----
+> Note: Subject = specific dog. Class = dogs
 
 `main.py` contains commands to run different parts of the project. I separated this into three parts
 
@@ -14,9 +12,7 @@ Here's how I structured the repository
 python main.py generate --config=CONFIGPATH
 ```
 
-training uses ~200 images of the broader class (e.g. "dog") as a regularization set to stop the model from forgetting what dogs look like in general. this command generates those using the base SD model. settings are in `configs/generate.yaml`
-
----
+training uses ~200 images of the broader class (e.g. "dog") as a regularization set. This command generates those using the base SD model. settings are in `configs/generate.yaml`
 
 ```
 python main.py train \
@@ -36,8 +32,6 @@ The script looks for instance images (jpg or png) at `INSTANCEDIR/SUBJECT/` and 
 
 Skips subjects whose checkpoint already exists in `OUTPUTDIR/`, so it's safe to rerun after a crash.
 
----
-
 ```
 python main.py eval \
  --config=CONFIGPATH \
@@ -52,12 +46,12 @@ python main.py eval \
 
 eval has two stages:
 
-_generate_ loads the fine-tuned checkpoint for each subject and runs it on 25 prompts (e.g. "a sks dog on the beach"), saving 4 images per prompt. Also generates the same prompts without the identifier as a sanity check that prior preservation didn't collapse.
+_generate_ loads the fine-tuned checkpoint for each subject and runs it on 25 prompts (e.g. "a sks dog on the beach"), saving 4 images per prompt. Also generates the same prompts w/o identifier
 
 _metrics_ computes three scores against the original instance images:
 
-- **DINO**: how much the generated images look like the specific subject (identity similarity)
-- **CLIP-I**: same idea but looser — captures category-level similarity
-- **CLIP-T**: how well the generated images match the text prompt
+- **DINO**: how much the generated images look like the specific subject (identity similarity). Needs generated subjects + original subjects
+- **CLIP-I**: similar to DINO. Needs generated subjects + original subjects
+- **CLIP-T**: how well the generated images match the text prompt. Needs prompt text + generated subjects
 
 reference images for DINO and CLIP-I are the original training photos of the subject, not the class images. results written to `RESULTSDIR/metrics.json`.
