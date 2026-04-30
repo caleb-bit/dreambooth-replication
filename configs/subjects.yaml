@@ -1,0 +1,26 @@
+subjects:
+  - name: dog6
+    class_name: dog
+    identifier: sks
+  - name: cat2
+    class_name: cat
+    identifier: sks
+  - name: backpack
+    class_name: backpack
+    identifier: sks
+
+hyperparameters:
+  resolution: 512
+  train_batch_size: 1
+  max_train_steps: 800
+  learning_rate: 5.0e-6
+  prior_loss_weight: 1.0
+  num_class_images: 200
+
+model:
+  id: "runwayml/stable-diffusion-v1-5"
+
+generation:
+  num_inference_steps: 50
+  guidance_scale: 7.5
+  samples_per_prompt: 4

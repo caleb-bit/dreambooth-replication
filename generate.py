@@ -8,9 +8,11 @@ def generate(args):
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
+    # MPS doesn't support fp16 — use fp32 there; fp16 on CUDA only
+    dtype = torch.float16 if cfg["device"] == "cuda" else torch.float32
     pipe = StableDiffusionPipeline.from_pretrained(
         cfg["model_id"],
-        torch_dtype=torch.float16,
+        torch_dtype=dtype,
         safety_checker=None,
     ).to(cfg["device"])
     pipe.enable_attention_slicing()
