@@ -1,0 +1,2 @@
+def train():
+    print("train")
