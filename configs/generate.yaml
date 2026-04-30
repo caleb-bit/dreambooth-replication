@@ -1,0 +1,14 @@
+model_id: "runwayml/stable-diffusion-v1-5"
+output_dir: "class_images"
+device: "mps"
+
+classes:
+  - dog
+  - cat
+  - backpack
+
+num_images: 200
+prompt_template: "a photo of a {class_name}"
+num_inference_steps: 50
+guidance_scale: 7.5
+seed: 42

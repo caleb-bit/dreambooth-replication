@@ -9,10 +9,11 @@ def build_parser():
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("train")
     subparsers.add_parser("eval")
-    subparsers.add_parser("generate")
+    gen = subparsers.add_parser("generate")
+    gen.add_argument("--config", required=True, help="Path to generation config yaml.")
     return parser
 
 
 if __name__ == "__main__":
     args = build_parser().parse_args()
-    {"train": train, "eval": eval, "generate": generate}[args.command]()
+    {"train": train, "eval": eval, "generate": generate}[args.command](args)
