@@ -97,7 +97,10 @@ def _compute_metrics(subjects, cfg, args):
         embs = []
         for i in range(0, len(paths), batch_size):
             batch_paths = paths[i : i + batch_size]
-            images = [Image.open(p).convert("RGB") for p in batch_paths]
+            images = []
+            for p in batch_paths:
+                with Image.open(p) as image:
+                    images.append(image.convert("RGB"))
             inputs = processor(images=images, return_tensors="pt")
             inputs = {k: v.to(device) for k, v in inputs.items()}
             with torch.no_grad():
