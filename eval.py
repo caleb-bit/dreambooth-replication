@@ -109,6 +109,56 @@ def _compute_metrics(subjects, cfg, args):
             embs.append(emb)
         return torch.cat(embs, dim=0)
 
+    # Optional DINO embeddings using timm (if available)
+    try:
+        import timm
+        import torchvision.transforms as T
+
+        dino_model = None
+        for name in ["dino_vits8", "dino_vits16", "dino_vitb8", "dino_vitb16"]:
+            try:
+                dino_model = timm.create_model(name, pretrained=True)
+                dino_input_size = dino_model.default_cfg.get("input_size", (3, 224, 224))[1]
+                break
+            except Exception:
+                dino_model = None
+        if dino_model is not None:
+            dino_model.eval()
+            dino_model.to(device)
+
+            dino_transform = T.Compose([
+                T.Resize(dino_input_size, interpolation=T.InterpolationMode.BILINEAR),
+                T.CenterCrop(dino_input_size),
+                T.ToTensor(),
+                T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            ])
+
+            def embed_images_dino(paths, batch_size=16):
+                embs = []
+                for i in range(0, len(paths), batch_size):
+                    batch_paths = paths[i : i + batch_size]
+                    images = []
+                    for p in batch_paths:
+                        with Image.open(p) as image:
+                            images.append(dino_transform(image.convert("RGB")))
+                    batch = torch.stack(images, dim=0).to(device)
+                    with torch.no_grad():
+                        if hasattr(dino_model, "forward_features"):
+                            feat = dino_model.forward_features(batch)
+                        else:
+                            feat = dino_model(batch)
+                        if feat.ndim == 3:
+                            feat = feat[:, 0]
+                        feat = feat / feat.norm(p=2, dim=1, keepdim=True)
+                    embs.append(feat.cpu())
+                return torch.cat(embs, dim=0)
+        else:
+            dino_model = None
+            embed_images_dino = None
+    except Exception:
+        dino_model = None
+        embed_images_dino = None
+
     def _latest_images(paths):
         """Return only the most recent image per prompt/sample prefix (e.g. '00_01')."""
         by_prefix = {}
@@ -146,6 +196,20 @@ def _compute_metrics(subjects, cfg, args):
         max_per_gen = sims.max(axis=1)
         clip_i = float(max_per_gen.mean())
 
+        # DINO (optional): same calcuation but using DINO image features if available
+        dino_score = None
+        if embed_images_dino is not None:
+            try:
+                ref_dino = embed_images_dino(ref_paths)
+                gen_dino = embed_images_dino(gen_paths)
+                sims_dino = (gen_dino @ ref_dino.T).numpy()
+                max_per_gen_dino = sims_dino.max(axis=1)
+                dino_score = float(max_per_gen_dino.mean())
+            except Exception as e:
+                print(f"[metrics] DINO computation failed: {e}")
+                dino_score = None
+
+
         # CLIP-T: compute similarity between each generated image and its prompt
         prompts = []
         for p in gen_paths:
@@ -164,8 +228,13 @@ def _compute_metrics(subjects, cfg, args):
         clip_t = float(per_image_sim.mean())
 
         results[name] = {"clip_i": clip_i, "clip_t": clip_t}
+        if dino_score is not None:
+            results[name]["dino"] = dino_score
 
-        print(f"[metrics] {name}: CLIP-I={clip_i:.4f} CLIP-T={clip_t:.4f}")
+        msg = f"[metrics] {name}: CLIP-I={clip_i:.4f} CLIP-T={clip_t:.4f}"
+        if dino_score is not None:
+            msg += f" DINO={dino_score:.4f}"
+        print(msg)
 
     out_dir = Path(args.results_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
