@@ -93,8 +93,12 @@ def _compute_metrics(subjects, cfg, args):
         name = subject["name"]
         # Use args.instance_dir (default: dreambooth_dataset) to find reference photos
         ref_path = Path(args.instance_dir) / name
-        ref_imgs = [Image.open(p).convert("RGB") for p in ref_path.glob("*") if p.suffix.lower() in [".jpg", ".jpeg", ".png"]]
-        
+        if not ref_path.exists():
+            raise FileNotFoundError(f"Reference image folder not found for subject '{name}': {ref_path}")
+        ref_imgs = [Image.open(p).convert("RGB") for p in sorted(ref_path.glob("*")) if p.suffix.lower() in [".jpg", ".jpeg", ".png"]]
+        if not ref_imgs:
+            raise ValueError(f"No reference images found for subject '{name}' in {ref_path}")
+
         # Pre-compute reference features
         with torch.no_grad():
             ref_dino = F.normalize(dino_model(**dino_proc(ref_imgs, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
