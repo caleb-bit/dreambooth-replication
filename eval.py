@@ -1,9 +1,11 @@
 import yaml
 import json
+import re
 import torch
 from pathlib import Path
 from diffusers import StableDiffusionPipeline
-from transformers import AutoProcessor, AutoModel
+from transformers import CLIPProcessor, CLIPModel
+from PIL import Image
 from utils import save_image
 
 
@@ -76,4 +78,83 @@ def _generate_eval_images(subjects, cfg, args):
 
 
 def _compute_metrics(subjects, cfg, args):
-    pass
+    from eval_prompts import PROMPTS, fill_specific
+
+    device = args.device
+
+    clip_name = "openai/clip-vit-base-patch32"
+    try:
+        processor = CLIPProcessor.from_pretrained(clip_name)
+        clip_model = CLIPModel.from_pretrained(clip_name).to(device)
+        clip_model.eval()
+    except Exception as e:
+        print(f"[metrics] failed to load CLIP model '{clip_name}': {e}")
+        return
+
+    results = {}
+
+    def embed_images(paths, batch_size=16):
+        embs = []
+        for i in range(0, len(paths), batch_size):
+            batch_paths = paths[i : i + batch_size]
+            images = [Image.open(p).convert("RGB") for p in batch_paths]
+            inputs = processor(images=images, return_tensors="pt")
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            with torch.no_grad():
+                emb = clip_model.get_image_features(**inputs)
+                emb = emb / emb.norm(p=2, dim=1, keepdim=True)
+            embs.append(emb.cpu())
+        return torch.cat(embs, dim=0)
+
+    for subject in subjects:
+        name = subject["name"]
+        print(f"[metrics] {name}")
+
+        gen_dir = Path("artifacts") / "eval" / "specific" / name
+        gen_paths = sorted(gen_dir.glob("*.png"))
+        if not gen_paths:
+            print(f"[skip] {name}: no generated images at {gen_dir}")
+            continue
+
+        ref_dir = Path(args.instance_dir) / name
+        ref_paths = sorted(ref_dir.glob("*.[jp][pn]g"))
+        if not ref_paths:
+            print(f"[skip] {name}: no reference images at {ref_dir}")
+            continue
+
+        # embeddings
+        ref_emb = embed_images(ref_paths)
+        gen_emb = embed_images(gen_paths)
+
+        # CLIP-I: for each generated image, take max similarity to any reference image
+        sims = (gen_emb @ ref_emb.T).numpy()
+        max_per_gen = sims.max(axis=1)
+        clip_i = float(max_per_gen.mean())
+
+        # CLIP-T: compute similarity between each generated image and its prompt
+        prompts = []
+        for p in gen_paths:
+            m = re.search(r"(\d{2})_(\d{2})", p.name)
+            prompt_idx = int(m.group(1)) if m else 0
+            prompts.append(fill_specific(PROMPTS[prompt_idx], subject["class_name"], subject.get("identifier", "")))
+
+        text_inputs = processor(text=prompts, return_tensors="pt", padding=True)
+        text_inputs = {k: v.to(device) for k, v in text_inputs.items()}
+        with torch.no_grad():
+            txt_emb = clip_model.get_text_features(**text_inputs)
+            txt_emb = txt_emb / txt_emb.norm(p=2, dim=1, keepdim=True)
+
+        gen_emb_dev = gen_emb.to(device)
+        per_image_sim = (gen_emb_dev * txt_emb).sum(dim=1).cpu().numpy()
+        clip_t = float(per_image_sim.mean())
+
+        results[name] = {"clip_i": clip_i, "clip_t": clip_t}
+
+        print(f"[metrics] {name}: CLIP-I={clip_i:.4f} CLIP-T={clip_t:.4f}")
+
+    out_dir = Path(args.results_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "metrics.json"
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"[metrics] written to {out_path}")
