@@ -109,12 +109,22 @@ def _compute_metrics(subjects, cfg, args):
             embs.append(emb.cpu())
         return torch.cat(embs, dim=0)
 
+    def _latest_images(paths):
+        """Return only the most recent image per prompt/sample prefix (e.g. '00_01')."""
+        by_prefix = {}
+        for p in paths:
+            m = re.match(r"(\d{2}_\d{2})_", p.name)
+            prefix = m.group(1) if m else p.stem
+            if prefix not in by_prefix or p.name > by_prefix[prefix].name:
+                by_prefix[prefix] = p
+        return sorted(by_prefix.values())
+
     for subject in subjects:
         name = subject["name"]
         print(f"[metrics] {name}")
 
         gen_dir = Path(args.output_dir) / "specific" / name
-        gen_paths = sorted(gen_dir.glob("*.png"))
+        gen_paths = _latest_images(sorted(gen_dir.glob("*.png")))
         if not gen_paths:
             print(f"[skip] {name}: no generated images at {gen_dir}")
             continue
