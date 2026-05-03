@@ -106,7 +106,7 @@ def _compute_metrics(subjects, cfg, args):
             with torch.no_grad():
                 emb = clip_model.get_image_features(**inputs)
                 emb = emb / emb.norm(p=2, dim=1, keepdim=True)
-            embs.append(emb.cpu())
+            embs.append(emb)
         return torch.cat(embs, dim=0)
 
     def _latest_images(paths):
