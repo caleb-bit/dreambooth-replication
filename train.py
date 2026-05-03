@@ -32,8 +32,8 @@ def train(args):
 
 
 def _train_one_subject(subject, hp, model_id, args):
-    device = args.device
-    train_dtype = torch.float16 if device == "cuda" else torch.float32
+    device = torch.device(args.device)
+    train_dtype = torch.float16 if device.type == "cuda" else torch.float32
 
     instance_dir = Path(args.instance_dir) / subject["name"]
     class_dir = Path(args.class_dir) / subject["class_name"]
@@ -54,10 +54,9 @@ def _train_one_subject(subject, hp, model_id, args):
     text_encoder.requires_grad_(False).to(device, dtype=train_dtype)
     text_encoder.eval()
     unet.to(device, dtype=train_dtype)
-    unet.train()
     unet.enable_gradient_checkpointing()
 
-    if bnb is not None and device == "cuda":
+    if bnb is not None and device.type == "cuda":
         optimizer = bnb.optim.AdamW8bit(unet.parameters(), lr=hp["learning_rate"])
     else:
         optimizer = torch.optim.AdamW(unet.parameters(), lr=hp["learning_rate"])
@@ -74,7 +73,13 @@ def _train_one_subject(subject, hp, model_id, args):
         raise ValueError(f"No instance images found for subject '{subject['name']}' in {instance_dir}")
     if len(dataset.class_paths) == 0:
         raise ValueError(f"No class images found for class '{subject['class_name']}' in {class_dir}")
-    loader = DataLoader(dataset, batch_size=hp["train_batch_size"], shuffle=True, drop_last=True)
+    train_batch_size = hp["train_batch_size"]
+    if len(dataset) < train_batch_size:
+        raise ValueError(
+            f"Dataset has only {len(dataset)} samples but train_batch_size is {train_batch_size}. "
+            "Add more images or reduce train_batch_size."
+        )
+    loader = DataLoader(dataset, batch_size=train_batch_size, shuffle=True, drop_last=False)
 
     unet.train()
     optimizer.zero_grad(set_to_none=True)
