@@ -1,10 +1,10 @@
 import yaml
 import json
 import torch
+from datetime import datetime
 from pathlib import Path
 from diffusers import StableDiffusionPipeline
 from transformers import ViTImageProcessor, ViTModel, CLIPProcessor, CLIPModel
-from utils import save_image
 
 from PIL import Image
 import torch.nn.functional as F
@@ -46,6 +46,11 @@ def _generate_eval_images(subjects, cfg, args):
         pipe.enable_attention_slicing()
 
         gen_cfg = cfg["generation"]
+        out_root = Path(args.output_dir)
+        specific_dir = out_root / "specific" / subject["name"]
+        general_dir = out_root / "general" / subject["name"]
+        specific_dir.mkdir(parents=True, exist_ok=True)
+        general_dir.mkdir(parents=True, exist_ok=True)
 
         for prompt_idx, template in enumerate(PROMPTS):
             specific_prompt = fill_specific(template, subject["class_name"], subject["identifier"])
@@ -57,22 +62,16 @@ def _generate_eval_images(subjects, cfg, args):
                     num_inference_steps=gen_cfg["num_inference_steps"],
                     guidance_scale=gen_cfg["guidance_scale"],
                 ).images[0]
-                save_image(
-                    f"eval/specific/{subject['name']}",
-                    f"{prompt_idx:02d}_{sample_idx:02d}",
-                    specific_image,
-                )
+                ts = datetime.now().strftime("%Y%m%dT%H%M%S%f")
+                specific_image.save(specific_dir / f"{prompt_idx:02d}_{sample_idx:02d}_{ts}.png")
 
                 general_image = pipe(
                     general_prompt,
                     num_inference_steps=gen_cfg["num_inference_steps"],
                     guidance_scale=gen_cfg["guidance_scale"],
                 ).images[0]
-                save_image(
-                    f"eval/general/{subject['name']}",
-                    f"{prompt_idx:02d}_{sample_idx:02d}",
-                    general_image,
-                )
+                ts = datetime.now().strftime("%Y%m%dT%H%M%S%f")
+                general_image.save(general_dir / f"{prompt_idx:02d}_{sample_idx:02d}_{ts}.png")
 
         print(f"[done] {subject['name']}: eval images saved")
         del pipe
