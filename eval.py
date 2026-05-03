@@ -113,7 +113,7 @@ def _compute_metrics(subjects, cfg, args):
         name = subject["name"]
         print(f"[metrics] {name}")
 
-        gen_dir = Path("artifacts") / "eval" / "specific" / name
+        gen_dir = Path(args.output_dir) / "specific" / name
         gen_paths = sorted(gen_dir.glob("*.png"))
         if not gen_paths:
             print(f"[skip] {name}: no generated images at {gen_dir}")
