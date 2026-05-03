@@ -50,8 +50,11 @@ def _train_one_subject(subject, hp, model_id, args):
     scheduler = DDPMScheduler.from_pretrained(model_id, subfolder="scheduler")
 
     vae.requires_grad_(False).to(device, dtype=train_dtype)
+    vae.eval()
     text_encoder.requires_grad_(False).to(device, dtype=train_dtype)
+    text_encoder.eval()
     unet.to(device, dtype=train_dtype)
+    unet.train()
     unet.enable_gradient_checkpointing()
 
     if bnb is not None and device == "cuda":
