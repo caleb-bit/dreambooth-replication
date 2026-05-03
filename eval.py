@@ -112,9 +112,19 @@ def _compute_metrics(subjects, cfg, args):
                 txt_feat = F.normalize(clip_model.get_text_features(**txt_inputs), dim=-1)
 
             for s_idx in range(cfg["generation"]["samples_per_prompt"]):
-                img_path = gen_dir / f"{p_idx:02d}_{s_idx:02d}.png"
-                if not img_path.exists(): continue
-                
+                exact_img_path = gen_dir / f"{p_idx:02d}_{s_idx:02d}.png"
+                if exact_img_path.exists():
+                    img_path = exact_img_path
+                else:
+                    candidates = sorted(
+                        gen_dir.glob(f"{p_idx:02d}_{s_idx:02d}_*.png"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True,
+                    )
+                    if not candidates:
+                        continue
+                    img_path = candidates[0]
+
                 gen_img = Image.open(img_path).convert("RGB")
                 with torch.no_grad():
                     g_dino = F.normalize(dino_model(**dino_proc(gen_img, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
