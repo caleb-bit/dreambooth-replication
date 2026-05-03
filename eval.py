@@ -3,7 +3,7 @@ import json
 import torch
 from pathlib import Path
 from diffusers import StableDiffusionPipeline
-from transformers import AutoProcessor, AutoModel, ViTImageProcessor, ViTModel, CLIPProcessor, CLIPModel
+from transformers import ViTImageProcessor, ViTModel, CLIPProcessor, CLIPModel
 from utils import save_image
 
 from PIL import Image
