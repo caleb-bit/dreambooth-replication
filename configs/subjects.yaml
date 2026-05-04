@@ -1,12 +1,6 @@
 subjects:
-  - name: dog6
+  - name: dog
     class_name: dog
-    identifier: sks
-  - name: cat2
-    class_name: cat
-    identifier: sks
-  - name: backpack
-    class_name: backpack
     identifier: sks
 
 hyperparameters:
@@ -15,7 +9,7 @@ hyperparameters:
   max_train_steps: 800
   learning_rate: 5.0e-6
   prior_loss_weight: 1.0
-  num_class_images: 200
+  num_class_images: 100
 
 model:
   id: "runwayml/stable-diffusion-v1-5"
