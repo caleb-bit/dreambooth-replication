@@ -130,6 +130,9 @@ def _train_one_subject(subject, hp, model_id, args):
         optimizer.zero_grad(set_to_none=True)
         step += 1
 
+        if step % 50 == 0 or step == 1:
+            print(f"  step {step:4d}/{hp['max_train_steps']} | loss={loss.item():.4f} (inst={instance_loss.item():.4f}, prior={prior_loss.item():.4f})")
+
     pipeline = StableDiffusionPipeline.from_pretrained(model_id, unet=unet.to("cpu"), safety_checker=None)
     pipeline.save_pretrained(output_dir)
     print(f"[done] {subject['name']}: saved to {output_dir}")
