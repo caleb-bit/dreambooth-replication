@@ -1,5 +1,68 @@
 # dreambooth-replication
 
+## Running on Colab
+
+### Setup (run once per session)
+
+```python
+# Cell 1 — clone & install
+!git clone https://github.com/caleb-bit/dreambooth-replication.git
+%cd dreambooth-replication
+!git lfs pull   # pull subject/class images stored in LFS
+!pip install -q diffusers transformers accelerate bitsandbytes Pillow torchvision
+```
+
+```python
+# Cell 2 — mount Drive (keeps checkpoints across sessions)
+from google.colab import drive
+drive.mount("/content/drive")
+
+WORK_DIR = "/content/drive/MyDrive/dreambooth"   # change to your Drive path
+!mkdir -p "{WORK_DIR}/checkpoints"
+```
+
+### Training
+
+```python
+# Cell 3 — train a subject
+!python main.py train \
+    --config configs/subjects.yaml \
+    --subject dog \
+    --instance-dir artifacts/subject_images \
+    --class-dir artifacts/class_images \
+    --output-dir "{WORK_DIR}/checkpoints" \
+    --device cuda
+```
+
+Logs print every 50 steps to stderr. If the session disconnects and you rerun, already-completed subjects are skipped automatically.
+
+### Generating a test image from a checkpoint
+
+```python
+import torch
+from diffusers import StableDiffusionPipeline
+
+CHECKPOINT = "/content/drive/MyDrive/dreambooth/checkpoints/dog"
+PROMPT = "a photo of sks dog on the beach"
+
+pipe = StableDiffusionPipeline.from_pretrained(
+    CHECKPOINT, torch_dtype=torch.float16, safety_checker=None
+).to("cuda")
+pipe.enable_attention_slicing()
+
+image = pipe(
+    PROMPT,
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    generator=torch.Generator("cuda").manual_seed(42),
+).images[0]
+
+image.save("test_output.png")
+image  # displays inline
+```
+
+---
+
 Ryan Qiu, Gordon Mei, Caleb Shim, Evan Cui
 
 > Note: Subject = specific dog. Class = dogs
