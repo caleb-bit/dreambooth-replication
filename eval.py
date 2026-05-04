@@ -87,10 +87,21 @@ def _generate_eval_images(subjects, cfg, args):
         del pipe
 
 
+def _get_features(out):
+    """Extract tensor from model output regardless of return type."""
+    if isinstance(out, torch.Tensor):
+        return out
+    for attr in ("image_embeds", "text_embeds", "pooler_output", "last_hidden_state"):
+        if hasattr(out, attr):
+            val = getattr(out, attr)
+            return val[:, 0] if attr == "last_hidden_state" else val
+    raise AttributeError(f"Cannot extract features from {type(out)}")
+
+
 def _compute_metrics(subjects, cfg, args):
     # compute DINO, CLIP-I, CLIP-T metrics as described in Dreambooth paper
     from eval_prompts import PROMPTS, fill_general
-    
+
     # Load Models
     dino_proc = ViTImageProcessor.from_pretrained("facebook/dino-vits16")
     dino_model = ViTModel.from_pretrained("facebook/dino-vits16").to(args.device).eval()
@@ -101,7 +112,6 @@ def _compute_metrics(subjects, cfg, args):
 
     for subject in subjects:
         name = subject["name"]
-        # Use args.instance_dir (default: dreambooth_dataset) to find reference photos
         ref_path = Path(args.instance_dir) / name
         if not ref_path.exists():
             raise FileNotFoundError(f"Reference image folder not found for subject '{name}': {ref_path}")
@@ -111,18 +121,26 @@ def _compute_metrics(subjects, cfg, args):
 
         # Pre-compute reference features
         with torch.no_grad():
-            ref_dino = F.normalize(dino_model(**dino_proc(ref_imgs, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
-            ref_clip = F.normalize(clip_model.get_image_features(**clip_proc(ref_imgs, return_tensors="pt").to(args.device)), dim=-1)
+            ref_dino = F.normalize(
+                dino_model(**dino_proc(ref_imgs, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :],
+                dim=-1,
+            )
+            clip_inputs = clip_proc(images=ref_imgs, return_tensors="pt").to(args.device)
+            ref_clip = F.normalize(
+                _get_features(clip_model.get_image_features(**clip_inputs)),
+                dim=-1,
+            )
 
         scores = {"dino": [], "clip_i": [], "clip_t": []}
-        # Look in args.output_dir (where generate stage saved them)
         gen_dir = Path(args.output_dir) / "specific" / name
 
         for p_idx, template in enumerate(PROMPTS):
-            # Prompt for CLIP-T
             txt_inputs = clip_proc(text=[fill_general(template, subject["class_name"])], return_tensors="pt", padding=True).to(args.device)
             with torch.no_grad():
-                txt_feat = F.normalize(clip_model.get_text_features(**txt_inputs), dim=-1)
+                txt_feat = F.normalize(
+                    _get_features(clip_model.get_text_features(**txt_inputs)),
+                    dim=-1,
+                )
 
             for s_idx in range(cfg["generation"]["samples_per_prompt"]):
                 exact_img_path = gen_dir / f"{p_idx:02d}_{s_idx:02d}.png"
@@ -140,14 +158,20 @@ def _compute_metrics(subjects, cfg, args):
 
                 gen_img = Image.open(img_path).convert("RGB")
                 with torch.no_grad():
-                    g_dino = F.normalize(dino_model(**dino_proc(gen_img, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
-                    g_clip = F.normalize(clip_model.get_image_features(**clip_proc(gen_img, return_tensors="pt").to(args.device)), dim=-1)
+                    g_dino = F.normalize(
+                        dino_model(**dino_proc(gen_img, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :],
+                        dim=-1,
+                    )
+                    g_clip = F.normalize(
+                        _get_features(clip_model.get_image_features(**clip_proc(images=gen_img, return_tensors="pt").to(args.device))),
+                        dim=-1,
+                    )
 
                 scores["dino"].append(torch.mm(g_dino, ref_dino.t()).mean().item())
                 scores["clip_i"].append(torch.mm(g_clip, ref_clip.t()).mean().item())
                 scores["clip_t"].append(torch.mm(g_clip, txt_feat.t()).item())
 
-        results[name] = {k: sum(v)/len(v) for k, v in scores.items() if v}
+        results[name] = {k: sum(v) / len(v) for k, v in scores.items() if v}
 
     # Write results to args.results_dir
     res_out = Path(args.results_dir) / "metrics.json"
