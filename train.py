@@ -1,3 +1,4 @@
+import sys
 import yaml
 import torch
 import torch.nn.functional as F
@@ -25,9 +26,9 @@ def train(args):
     for subject in subjects:
         checkpoint_path = Path(args.output_dir) / subject["name"] / "model_index.json"
         if checkpoint_path.exists():
-            print(f"[skip] {subject['name']}: checkpoint already exists")
+            print(f"[skip] {subject['name']}: checkpoint already exists", file=sys.stderr)
             continue
-        print(f"[train] {subject['name']}")
+        print(f"[train] {subject['name']}", file=sys.stderr)
         _train_one_subject(subject, cfg["hyperparameters"], cfg["model"]["id"], args)
 
 
@@ -53,7 +54,7 @@ def _train_one_subject(subject, hp, model_id, args):
     vae.eval()
     text_encoder.requires_grad_(False).to(device, dtype=train_dtype)
     text_encoder.eval()
-    unet.to(device, dtype=train_dtype)
+    unet.to(device)  # fp32 — keeps gradients healthy; only frozen models go fp16
     unet.enable_gradient_checkpointing()
 
     if bnb is not None and device.type == "cuda":
@@ -115,11 +116,11 @@ def _train_one_subject(subject, hp, model_id, args):
         ).long()
         noisy_latents = scheduler.add_noise(latents, noise, timesteps)
 
-        model_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
+        model_pred = unet(noisy_latents.float(), timesteps, encoder_hidden_states.float()).sample
         if scheduler.config.prediction_type == "v_prediction":
-            target = scheduler.get_velocity(latents, noise, timesteps)
+            target = scheduler.get_velocity(latents, noise, timesteps).float()
         else:
-            target = noise
+            target = noise.float()
 
         instance_loss = F.mse_loss(model_pred[:instance_batch_size], target[:instance_batch_size])
         prior_loss = F.mse_loss(model_pred[instance_batch_size:], target[instance_batch_size:])
@@ -130,6 +131,9 @@ def _train_one_subject(subject, hp, model_id, args):
         optimizer.zero_grad(set_to_none=True)
         step += 1
 
+        if step % 50 == 0 or step == 1:
+            print(f"  step {step:4d}/{hp['max_train_steps']} | loss={loss.item():.4f} (inst={instance_loss.item():.4f}, prior={prior_loss.item():.4f})", file=sys.stderr, flush=True)
+
     pipeline = StableDiffusionPipeline.from_pretrained(model_id, unet=unet.to("cpu"), safety_checker=None)
     pipeline.save_pretrained(output_dir)
-    print(f"[done] {subject['name']}: saved to {output_dir}")
+    print(f"[done] {subject['name']}: saved to {output_dir}", file=sys.stderr, flush=True)
