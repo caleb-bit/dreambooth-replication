@@ -93,7 +93,7 @@ subject should be something like "cat6" or "dog2". They must match a name in the
 
 The script looks for instance images (jpg or png) at `INSTANCEDIR/SUBJECT/` and class images at `CLASSDIR/CLASSNAME/`.
 
-Skips subjects whose checkpoint already exists in `OUTPUTDIR/`, so it's safe to rerun after a crash.
+Skips subjects whose checkpoint already exists in `OUTPUTDIR/`, so it's safe to rerun after a crash. You should use the path to subjects.yaml for CONFIG PATH.
 
 ```
 python main.py eval \
