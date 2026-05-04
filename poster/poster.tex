@@ -3,6 +3,7 @@
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{url}
+\usepackage{graphicx}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins}
 \setbeamertemplate{navigation symbols}{}
@@ -78,9 +79,6 @@
         \end{citemize}
 
         \vspace{0.4em}
-        \textbf{Why from scratch?} We implemented the training loop manually rather
-        than adapting HuggingFace's existing script, to build ground-up understanding
-        of every algorithm step.
       }
 
       \pbox{Original Paper Summary}{
@@ -95,13 +93,24 @@
           so the model freely associates it with the new subject.
         \item \textbf{Prior preservation loss:} Regularizes against 200 generated
           class images to retain general class knowledge.
-        \item \textbf{Full fine-tuning:} All UNet weights updated for maximum fidelity.
-        \item \textbf{Metrics:} DINO, CLIP-I, and CLIP-T measure identity and alignment.
         \end{citemize}
 
         \vspace{0.3em}
         The paper used Google Imagen (closed source). SD~1.5 is the standard substitute
         and scores slightly lower due to smaller scale.
+      }
+
+      \pbox{Implementation Details}{
+        \begin{citemize}
+        \item \textbf{fp32 UNet:} Frozen components run fp16; trainable UNet stays
+          fp32 to prevent gradient underflow --- a critical fix not explicit in the paper.
+        \item \textbf{Memory:} Gradient checkpointing + 8-bit Adam keeps peak VRAM
+          under 13~GB on a 16~GB T4.
+        \item \textbf{Resumability:} Every round skips completed artifacts, required
+          for Colab's 12-hour session limit.
+        \item \textbf{Checkpoint:} Only the UNet is persisted; eval loads base SD
+          weights and swaps in the fine-tuned UNet.
+        \end{citemize}
       }
 
     \end{column}
@@ -164,19 +173,6 @@
         Metric computation on local CPU.
       }
 
-      \pbox{Implementation Details}{
-        \begin{citemize}
-        \item \textbf{fp32 UNet:} Frozen components run fp16; trainable UNet stays
-          fp32 to prevent gradient underflow --- a critical fix not explicit in the paper.
-        \item \textbf{Memory:} Gradient checkpointing + 8-bit Adam keeps peak VRAM
-          under 13~GB on a 16~GB T4.
-        \item \textbf{Resumability:} Every round skips completed artifacts, required
-          for Colab's 12-hour session limit.
-        \item \textbf{Checkpoint:} Only the UNet is persisted; eval loads base SD
-          weights and swaps in the fine-tuned UNet.
-        \end{citemize}
-      }
-
     \end{column}
 
     %--- COL 3 ---
@@ -191,11 +187,11 @@
             \toprule
             \textbf{Subject} & \textbf{DINO}$\uparrow$ & \textbf{CLIP-I}$\uparrow$ & \textbf{CLIP-T}$\uparrow$ \\
             \midrule
-            dog         & --- & --- & --- \\
-            dog2        & --- & --- & --- \\
-            backpack    & --- & --- & --- \\
+            dog         & 0.716 & 0.867 & 0.275 \\
+            dog2        & 0.542 & 0.828 & 0.247 \\
+            backpack    & 0.536 & 0.887 & 0.274 \\
             \midrule
-            \textbf{Mean} & \textbf{---} & \textbf{---} & \textbf{---} \\
+            \textbf{Mean} & \textbf{0.598} & \textbf{0.861} & \textbf{0.265} \\
             \midrule
             \textit{Expected} & \textit{0.65--0.70} & \textit{0.78--0.82} & \textit{0.28--0.32} \\
             \bottomrule
@@ -203,16 +199,23 @@
         \end{center}
 
         \vspace{0.6em}
-        % Image examples and loss curve will be added here once generated.
+        \textbf{Qualitative examples:}
+
+        \vspace{0.4em}
+        \begin{center}
+          \begin{tabular}{cc}
+            \includegraphics[width=0.42\linewidth,height=0.42\linewidth,keepaspectratio]{imgs/dog_ref.jpg} &
+            \includegraphics[width=0.42\linewidth,height=0.42\linewidth,keepaspectratio]{imgs/cornellmerch2.png} \\[2pt]
+            {\small Reference subject} &
+            {\small ``a [v] dog with Cornell merch''} \\
+          \end{tabular}
+        \end{center}
 
         \vspace{0.5em}
         \textbf{Qualitative observations:}
         \begin{citemize}
         \item Subject identity preserved across novel backgrounds and lighting.
-        \item Prior preservation keeps generic class generation intact when
-          \texttt{sks} is omitted from the prompt.
-        \item Rigid objects (backpack) show higher CLIP-T but lower DINO than
-          animals, consistent with the original paper.
+        \item Fine tuning both the UNet and the text encoder leads to sub-optimal, overfit results
         \end{citemize}
       }
 
