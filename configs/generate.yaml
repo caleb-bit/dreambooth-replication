@@ -12,3 +12,4 @@ prompt_template: "a photo of a {class_name}"
 num_inference_steps: 50
 guidance_scale: 7.5
 seed: 42
+generation_batch_size: 4

@@ -23,13 +23,19 @@ def generate(args):
         prompt = cfg["prompt_template"].format(class_name=class_name)
         print(f"[generate] {class_name}: generating {cfg['num_images']} images")
 
-        for i in range(cfg["num_images"]):
-            image = pipe(
+        batch_size = cfg.get("generation_batch_size", 4)
+        i = 0
+        while i < cfg["num_images"]:
+            n = min(batch_size, cfg["num_images"] - i)
+            images = pipe(
                 prompt,
+                num_images_per_prompt=n,
                 num_inference_steps=cfg["num_inference_steps"],
                 guidance_scale=cfg["guidance_scale"],
                 generator=generator,
-            ).images[0]
-            path = save_image(f"class_images/{class_name}", f"{i:04d}", image)
+            ).images
+            for img in images:
+                path = save_image(f"class_images/{class_name}", f"{i:04d}", img)
+                i += 1
 
         print(f"[done] {class_name}: saved to {path.parent}")
