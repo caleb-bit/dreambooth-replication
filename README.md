@@ -96,15 +96,28 @@ The script looks for instance images (jpg or png) at `INSTANCEDIR/SUBJECT/` and 
 Skips subjects whose checkpoint already exists in `OUTPUTDIR/`, so it's safe to rerun after a crash. You should use the path to subjects.yaml for CONFIG PATH.
 
 ```
-python main.py eval \
- --config=CONFIGPATH \
- --stage=generate|metrics \
- --subject=SUBJECT \
- --checkpoint-dir=CHECKPOINTDIR \
- --instance-dir=INSTANCEDIR \
- --output-dir=OUTPUTDIR \
- --results-dir=RESULTSDIR \
- --device=DEVICE
+# Stage 1 — generate images from checkpoints
+!python main.py eval \
+ --config=/content/dreambooth-replication/configs/subjects.yaml \
+ --stage=generate \
+ --subject=dog \
+ --checkpoint-dir="/content/drive/MyDrive/dreambooth/checkpoints" \
+ --instance-dir=artifacts/subject_images \
+ --output-dir="/content/drive/MyDrive/dreambooth/eval_output" \
+ --device=cuda
+```
+
+```
+# Stage 2 — compute DINO / CLIP-I / CLIP-T metrics
+!python main.py eval \
+ --config=/content/dreambooth-replication/configs/subjects.yaml \
+ --stage=metrics \
+ --subject=dog \
+ --checkpoint-dir="/content/drive/MyDrive/dreambooth/checkpoints" \
+ --instance-dir=artifacts/subject_images \
+ --output-dir="/content/drive/MyDrive/dreambooth/eval_output" \
+ --results-dir="/content/drive/MyDrive/dreambooth/results" \
+ --device=cuda
 ```
 
 eval has two stages:
