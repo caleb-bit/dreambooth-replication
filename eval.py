@@ -112,7 +112,8 @@ def _compute_metrics(subjects, cfg, args):
         # Pre-compute reference features
         with torch.no_grad():
             ref_dino = F.normalize(dino_model(**dino_proc(ref_imgs, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
-            ref_clip = F.normalize(clip_model.get_image_features(**clip_proc(ref_imgs, return_tensors="pt").to(args.device)), dim=-1)
+            clip_inputs = clip_proc(ref_imgs, return_tensors="pt").to(args.device)
+            ref_clip = F.normalize(clip_model.get_image_features(**clip_inputs).image_embeds, dim=-1)
 
         scores = {"dino": [], "clip_i": [], "clip_t": []}
         # Look in args.output_dir (where generate stage saved them)
@@ -122,7 +123,7 @@ def _compute_metrics(subjects, cfg, args):
             # Prompt for CLIP-T
             txt_inputs = clip_proc(text=[fill_general(template, subject["class_name"])], return_tensors="pt", padding=True).to(args.device)
             with torch.no_grad():
-                txt_feat = F.normalize(clip_model.get_text_features(**txt_inputs), dim=-1)
+                txt_feat = F.normalize(clip_model.get_text_features(**txt_inputs).text_embeds, dim=-1)
 
             for s_idx in range(cfg["generation"]["samples_per_prompt"]):
                 exact_img_path = gen_dir / f"{p_idx:02d}_{s_idx:02d}.png"
@@ -141,7 +142,7 @@ def _compute_metrics(subjects, cfg, args):
                 gen_img = Image.open(img_path).convert("RGB")
                 with torch.no_grad():
                     g_dino = F.normalize(dino_model(**dino_proc(gen_img, return_tensors="pt").to(args.device)).last_hidden_state[:, 0, :], dim=-1)
-                    g_clip = F.normalize(clip_model.get_image_features(**clip_proc(gen_img, return_tensors="pt").to(args.device)), dim=-1)
+                    g_clip = F.normalize(clip_model.get_image_features(**clip_proc(gen_img, return_tensors="pt").to(args.device)).image_embeds, dim=-1)
 
                 scores["dino"].append(torch.mm(g_dino, ref_dino.t()).mean().item())
                 scores["clip_i"].append(torch.mm(g_clip, ref_clip.t()).mean().item())
