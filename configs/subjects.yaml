@@ -1,6 +1,6 @@
 subjects:
-  - name: dog2
-    class_name: dog
+  - name: backpack
+    class_name: backpack
     identifier: sks
 
 hyperparameters:
