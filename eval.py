@@ -39,17 +39,12 @@ def _generate_eval_images(subjects, cfg, args):
 
         dtype = torch.float16 if args.device == "cuda" else torch.float32
         from diffusers import UNet2DConditionModel
-        from transformers import CLIPTextModel
         unet = UNet2DConditionModel.from_pretrained(
             checkpoint_dir / "unet", torch_dtype=dtype
-        )
-        text_encoder = CLIPTextModel.from_pretrained(
-            checkpoint_dir / "text_encoder", torch_dtype=dtype
         )
         pipe = StableDiffusionPipeline.from_pretrained(
             cfg["model"]["id"],
             unet=unet,
-            text_encoder=text_encoder,
             torch_dtype=dtype,
             safety_checker=None,
         ).to(args.device)

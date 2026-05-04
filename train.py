@@ -52,21 +52,15 @@ def _train_one_subject(subject, hp, model_id, args):
 
     vae.requires_grad_(False).to(device, dtype=train_dtype)
     vae.eval()
-    text_encoder.to(device)  # fp32, trainable
-    text_encoder.train()
+    text_encoder.requires_grad_(False).to(device, dtype=train_dtype)
+    text_encoder.eval()
     unet.to(device)  # fp32 — keeps gradients healthy; only frozen models go fp16
     unet.enable_gradient_checkpointing()
 
     if bnb is not None and device.type == "cuda":
-        optimizer = bnb.optim.AdamW8bit(
-            list(unet.parameters()) + list(text_encoder.parameters()),
-            lr=hp["learning_rate"],
-        )
+        optimizer = bnb.optim.AdamW8bit(unet.parameters(), lr=hp["learning_rate"])
     else:
-        optimizer = torch.optim.AdamW(
-            list(unet.parameters()) + list(text_encoder.parameters()),
-            lr=hp["learning_rate"],
-        )
+        optimizer = torch.optim.AdamW(unet.parameters(), lr=hp["learning_rate"])
 
     dataset = DreamBoothDataset(
         instance_dir=instance_dir,
@@ -111,7 +105,7 @@ def _train_one_subject(subject, hp, model_id, args):
         with torch.no_grad():
             latents = vae.encode(pixel_values).latent_dist.sample()
             latents = latents * vae.config.scaling_factor
-        encoder_hidden_states = text_encoder(input_ids)[0]
+            encoder_hidden_states = text_encoder(input_ids)[0]
 
         noise = torch.randn_like(latents)
         timesteps = torch.randint(
@@ -140,6 +134,6 @@ def _train_one_subject(subject, hp, model_id, args):
         if step % 50 == 0 or step == 1:
             print(f"  step {step:4d}/{hp['max_train_steps']} | loss={loss.item():.4f} (inst={instance_loss.item():.4f}, prior={prior_loss.item():.4f})", file=sys.stderr, flush=True)
 
-    pipeline = StableDiffusionPipeline.from_pretrained(model_id, unet=unet.to("cpu"), text_encoder=text_encoder.to("cpu"), safety_checker=None)
+    pipeline = StableDiffusionPipeline.from_pretrained(model_id, unet=unet.to("cpu"), safety_checker=None)
     pipeline.save_pretrained(output_dir)
     print(f"[done] {subject['name']}: saved to {output_dir}", file=sys.stderr, flush=True)
