@@ -131,3 +131,5 @@ _metrics_ computes three scores against the original instance images:
 - **CLIP-T**: how well the generated images match the text prompt. Needs prompt text + generated subjects
 
 reference images for DINO and CLIP-I are the original training photos of the subject, not the class images. results written to `RESULTSDIR/metrics.json`.
+
+### Logo training planning
