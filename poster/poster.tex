@@ -134,20 +134,9 @@
 
         \vspace{0.4em}
         \textbf{Hyperparameters:}
+        800 training steps, learning rate: $5\times 10^{-6}$, resolution: $512\times 512$, prior weight $\lambda=1.0$, $100$ class images, $5$ instance images, optimizer: 8-bit AdamW.
         \begin{center}
-          \begin{tabular}{ll}
-            \toprule
-            \textbf{Parameter}     & \textbf{Value}     \\
-            \midrule
-            Training steps         & 800                \\
-            Learning rate          & $5 \times 10^{-6}$ \\
-            Resolution             & $512 \times 512$   \\
-            Prior weight $\lambda$ & 1.0                \\
-            Class images           & 100                \\
-            Instance images        & 5                  \\
-            Optimizer              & 8-bit AdamW        \\
-            \bottomrule
-          \end{tabular}
+          \includegraphics[scale=0.65]{fine_tuning_inference.png}
         \end{center}
 
         \vspace{0.4em}
@@ -158,7 +147,7 @@
       \pbox{Additional Explorations}{
         \vspace{0.5em}
         \textbf{1. Logo fine-tuning.}
-        Testing the ability to reproduce graphic assets like brand logos across novel contexts --- product mockups, merchandise, etc. Key differences: sharp edges, flat colors, and precise geometry. Exact graphic fidelity $>$ perceptual identity.
+        Testing with graphic assets like brand logos across novel contexts (product mockups, merchandise, etc.) Key differences: sharp edges, flat colors, and precise geometry. Exact graphic fidelity $>$ perceptual identity.
 
         \vspace{0.5em}
         \textbf{2. Art style transfer.}
@@ -169,10 +158,9 @@
       \pbox{Future Work}{
         \begin{citemize}
           \item \textbf{Text encoder fine-tuning:} Unfreezing CLIP may improve binding for unusual subjects (as in the original paper).
-          \item \textbf{Scale to 30 subjects:} Enables direct comparison with the paper's SD~1.5 baseline.
+          \item \textbf{Multi-subject:} Bind multiple identifiers in one fine-tune.
           \item \textbf{Hyperparameter sweep:} Characterize the under/overfit boundary by varying learning rate and step count.
           \item \textbf{LoRA comparison:} Quantify the fidelity gap between full fine-tuning and an equivalent LoRA adapter.
-          \item \textbf{Multi-subject:} Bind multiple identifiers in one fine-tune.
         \end{citemize}
       }
 
@@ -203,7 +191,7 @@
         \end{center}
 
         \vspace{0.6em}
-        \textbf{Qualitative examples:}
+        \textbf{Examples:}
 
         \vspace{0.4em}
         \begin{center}
@@ -232,14 +220,12 @@
         \vspace{0.4em}
         \textbf{Key takeaways:}
         \begin{citemize}
-          \item Prior preservation is essential --- without it, the model collapses
-          to the subject for all class prompts.
+          \item Prior preservation is essential to prevent collapsing
+          to the subject.
           \item fp32 UNet is critical; fp16 gradients underflow and break identity binding.
-          \item Full UNet fine-tuning achieves strong fidelity with only 5 instance
-          images and 800 steps.
+          \item Full UNet fine-tuning achieves strong fidelity with only 5 instance images and 800 steps.
           \item 8-bit Adam + gradient checkpointing makes this viable on a free Colab T4.
-          \item Metrics fall within the expected SD~1.5 range, confirming faithful
-          replication.
+          \item Metrics within the expected SD~1.5 range, confirming faithful replication.
         \end{citemize}
       }
 
