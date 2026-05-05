@@ -8,16 +8,22 @@ def generate(args):
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
-    # MPS doesn't support fp16 — use fp32 there; fp16 on CUDA only
-    dtype = torch.float16 if cfg["device"] == "cuda" else torch.float32
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+
+    dtype = torch.float16 if device == "cuda" else torch.float32
     pipe = StableDiffusionPipeline.from_pretrained(
         cfg["model_id"],
         torch_dtype=dtype,
         safety_checker=None,
-    ).to(cfg["device"])
+    ).to(device)
     pipe.enable_attention_slicing()
 
-    generator = torch.Generator(device=cfg["device"]).manual_seed(cfg["seed"])
+    generator = torch.Generator(device=device).manual_seed(cfg["seed"])
 
     for class_name in cfg["classes"]:
         prompt = cfg["prompt_template"].format(class_name=class_name)
