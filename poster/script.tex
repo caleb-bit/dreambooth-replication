@@ -4,26 +4,34 @@
 
 \begin{document}
 
-\textbf{RYAN} \textit{(\textasciitilde{}35 sec)}
+\textbf{RYAN} \textit{(\textasciitilde{}60 sec)}
 
-``Hi, thanks for stopping by. Our project replicates DreamBooth, a technique from Ruiz et al.\ at CVPR 2023. The core problem is this: standard text-to-image models like Stable Diffusion can generate a dog, but they can't generate \textit{your} dog. DreamBooth solves this by fine-tuning the model on just 3 to 5 photos of a specific subject, binding it to a rare-token identifier like `[v]'. From then on, you can prompt the model with `[v] dog on the moon' and it will generate that exact subject in any context. Our goal was to replicate this from scratch on Stable Diffusion 1.5 and verify that we could match the paper's quantitative results.''
+``Thanks for stopping by. The problem we're addressing is personalization in text-to-image generation. These models have a rich statistical understanding of concepts---they know what a dog looks like---but that knowledge is averaged over millions of examples. They cannot generate a specific instance they have never seen. DreamBooth addresses this through targeted fine-tuning: given five or so reference images, it updates the model's weights just enough to bind a specific subject into its representation space. From that point, the subject can be compositionally placed into any scene the model can express. Our goal was to replicate this pipeline from scratch and verify that we could reproduce the paper's reported results on Stable Diffusion 1.5.''
 
-\textbf{GORDON} \textit{(\textasciitilde{}40 sec)}
+\textbf{CALEB} \textit{(\textasciitilde{}75 sec)}
 
-``There are two key ideas that make DreamBooth work. First, you label your instance images as `a [v] dog', where [v] is a rare token with no prior meaning, so the model doesn't get confused by semantic baggage. Second, prior-preservation loss: during fine-tuning, you simultaneously train on pre-generated class images---generic dogs---to prevent language drift, where the model forgets what a dog looks like in general.
+``Fine-tuning a diffusion model on a few images introduces two problems, and DreamBooth has a specific solution to each. The first is identity dilution. If you caption your images as `a dog,' the model attempts to reconcile your subject with its existing concept of dogs---the identity gets averaged away. The solution is to instead use a rare identifier token, something semantically empty, so the model has no prior associations to compete with. All meaning assigned to that token must come from your images.
 
-Architecturally, SD 1.5 has three components: a VAE for encoding and decoding images, a UNet that does the actual denoising---this is what we fine-tune---and a frozen CLIP text encoder. The combined loss is just the denoising loss on instance images plus lambda times the same loss on class images, where lambda is 1.0. We trained for 800 steps at a learning rate of $5 \times 10^{-6}$ using 8-bit AdamW.''
+The second problem is language drift. Training exclusively on a small set of images causes the model to overwrite its general understanding of the class---it forgets what a generic dog looks like. The solution is prior preservation: before training, you generate a set of class images using the model itself, then include those in every training step alongside your subject images. The loss jointly optimizes both, so the model learns your subject while retaining its broader representation of the concept.''
 
-\textbf{CALEB} \textit{(\textasciitilde{}35 sec)}
+\textbf{GORDON} \textit{(\textasciitilde{}75 sec)}
 
-``Our quantitative results used three subjects from the official DreamBooth dataset: two dogs and a backpack. We evaluated with DINO and CLIP-I for subject fidelity, and CLIP-T for prompt fidelity. Our mean DINO was 0.598, CLIP-I was 0.861, and CLIP-T was 0.265---all within or very close to the expected SD 1.5 range from the paper.
+``Replication has an unusual success criterion: you're trying to reproduce numbers that are already published. The paper reports benchmark ranges for Stable Diffusion 1.5, and our implementation landed within those ranges across all metrics---which validated that our pipeline is faithful, though reaching that point required a large number of implementation decisions to be correct simultaneously.
 
-Beyond the main replication, we explored two extensions: fine-tuning on brand logos to test how well the method handles sharp edges and flat colors, and art style transfer to transfer a specific artist's visual style rather than a physical subject.''
+The metrics themselves capture a fundamental tension in personalization. Subject fidelity measures how closely the output resembles your specific subject; prompt fidelity measures how well the output follows the text. These two objectives pull against each other. Overfit to the subject and the model stops responding to the prompt. Underfit and the subject looks generic. DreamBooth occupies a narrow region between those two failure modes.
 
-\textbf{EVAN} \textit{(\textasciitilde{}30 sec)}
+Beyond the core replication, we ran two extensions to probe the method's boundaries. The first applied DreamBooth to brand logos---high-contrast graphics with sharp edges and flat colors, which differ substantially from the photographic textures the method was designed for. The second targeted artistic style transfer, treating a visual aesthetic as the subject rather than a physical object. Both extensions surfaced limitations the original paper did not address.''
 
-``A few key engineering lessons stood out. Prior preservation is non-negotiable---without it, the model collapses entirely to the subject. We also found that fp32 precision for the UNet is critical; fp16 gradients underflow and break identity binding entirely. And importantly, fine-tuning only the UNet and keeping CLIP frozen gave better results than unfreezing both---jointly fine-tuning the text encoder led to overfitting.
+\textbf{EVAN} \textit{(\textasciitilde{}75 sec)}
 
-The whole pipeline runs in 30 to 40 minutes on a free Colab T4, which makes it surprisingly accessible. We're happy to take any questions about the training loop, the metrics, or the extensions.''
+``I want to highlight a few implementation details that the paper does not make prominent but turned out to be critical.
+
+Prior preservation is described as a regularization technique, but its role is more fundamental than that framing suggests. When we ablated it, the model did not degrade gracefully---it failed completely. The subject displaced the model's entire concept of the class, and general generation became incoherent. The loss balance is load-bearing.
+
+We also encountered a numerical precision failure that was difficult to diagnose. Using half-precision arithmetic---standard practice for memory efficiency---caused gradient updates to fall below the representable range, so the weights effectively stopped moving. Training appeared normal: the loss curve looked reasonable, no errors were raised, but the output showed no identity binding at all. Full precision resolved it immediately. It is the kind of failure that is invisible without knowing to look for it.
+
+Finally, we found that fine-tuning less of the model produced better results. Keeping the text encoder frozen and updating only the denoising network gave sharper, more compositional outputs. Jointly fine-tuning both led to overfitting. The intuition is that the text encoder already understands language---what needs updating is how the visual component responds to it.
+
+The full pipeline runs in under an hour on a free GPU. We are happy to take questions.''
 
 \end{document}
