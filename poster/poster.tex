@@ -62,9 +62,7 @@
         but cannot render a \emph{specific} subject without additional fine-tuning.
 
         \vspace{0.4em}
-        \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos, it
-        personalizes a diffusion model so a rare token (\texttt{sks}) binds permanently
-        to that subject's appearance.
+        \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos, it personalizes a diffusion model so a rare token binds permanently to that subject's appearance.
 
         \vspace{0.4em}
         \textbf{Goal.} Replicate DreamBooth on \texttt{stable-diffusion-v1-5} (SD~1.5)
@@ -145,6 +143,9 @@
           + \lambda
           \underbrace{\|\hat\varepsilon_\mathrm{class} - \varepsilon_\mathrm{class}\|^2}_{\text{prior preservation}}
         \]
+        \begin{center}
+          \includegraphics[scale=1.8]{loss_diagram.png}
+        \end{center}
 
         \vspace{0.4em}
         \textbf{Hyperparameters:}
@@ -284,12 +285,12 @@
 
       \pbox{References}{
         \small\setlength{\parskip}{4pt}
-        [1] Ruiz et al.\ \textit{DreamBooth.} CVPR 2023.\\
-        [2] Rombach et al.\ \textit{Latent Diffusion Models.} CVPR 2022.\\
-        [3] Radford et al.\ \textit{CLIP.} ICML 2021.\\
-        [4] Caron et al.\ \textit{DINO.} ICCV 2021.\\
-        [5] \url{https://github.com/huggingface/diffusers}\\
-        [6] \url{https://github.com/google/dreambooth}
+        $\text{[1]}$ Ruiz et al.\ \textit{DreamBooth.} CVPR 2023.\\
+        $\text{[2]}$ Rombach et al.\ \textit{Latent Diffusion Models.} CVPR 2022.\\
+        $\text{[3]}$ Radford et al.\ \textit{CLIP.} ICML 2021.\\
+        $\text{[4]}$ Caron et al.\ \textit{DINO.} ICCV 2021.\\
+        $\text{[5]}$ \url{https://github.com/huggingface/diffusers}\\
+        $\text{[6]}$ \url{https://github.com/google/dreambooth}
       }
 
     \end{column}
