@@ -1,5 +1,8 @@
 \documentclass[final]{beamer}
-\usepackage[orientation=landscape,size=a0,scale=1.4]{beamerposter}
+\usepackage[orientation=landscape,    orientation=landscape,
+    size=custom,
+    width=36in,
+    height=24in,scale=1.0]{beamerposter}
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
 \usepackage{url}
@@ -17,13 +20,13 @@
     fonttitle=\large\bfseries\color{white},
     arc=4pt, boxrule=1.5pt,
     titlerule=0pt, toptitle=5pt, bottomtitle=5pt,
-    left=8pt, right=8pt, top=6pt, bottom=6pt,
+    left=8pt, right=8pt, top=4pt, bottom=4pt,
   }
 }
 \newcommand{\pbox}[2]{%
-  \vspace{4pt}
+  \vspace{2pt}
   \begin{tcolorbox}[pstyle,title={#1}]#2
-  \end{tcolorbox}\vspace{6pt}%
+  \end{tcolorbox}\vspace{2pt}%
 }
 
 % Plain compact lists (enumitem conflicts with beamerposter+tcolorbox)
@@ -42,7 +45,7 @@
   % ── Header ───────────────────────────────────────────────────────────────────
   \begin{center}
     \vspace{0.3em}
-    {\fontsize{52}{58}\selectfont\bfseries\color{cornellred}
+    {\fontsize{40}{46}\selectfont\bfseries\color{cornellred}
     Replicating DreamBooth: Subject-Driven Fine-Tuning of Stable Diffusion}\\[0.3em]
     {\Large Ryan Qiu \quad Gordon Mei \quad Caleb Shim \quad Evan Cui}\\[0.1em]
     {\large Cornell University}\\
@@ -60,21 +63,21 @@
         Generative text-to-image models produce photorealistic images from text prompts, but cannot render a \emph{specific} subject.
 
         \vspace{0.4em}
-        \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos of the subject, it fine-tunes a diffusion model, allowing it to generate images of the subject in various contexts based on the textual prompt.
+        \textbf{DreamBooth} solves this: given 3--5 photos of the subject, it fine-tunes a diffusion model, allowing it to generate images of the subject in various contexts based on the textual prompt.
 
         \begin{center}
 
-          \includegraphics[scale=0.65]{fine_tuning_inference.png}
+          \includegraphics[scale=0.45]{fine_tuning_inference.png}
+          {\footnotesize Dreambooth Technique During Fine-Tuning and Inference}
         \end{center}
 
         \vspace{0.4em}
         \textbf{Goal.} Replicate DreamBooth on \texttt{stable-diffusion-v1-5} (SD~1.5) and verify quantitative metrics.
       }
 
-      \pbox{Background}{
+      \pbox{Background and Key Ideas}{
 
         \vspace{0.4em}
-        \textbf{Key ideas:}
         \begin{citemize}
         \item \textbf{Image labeling}: Label subjects with ``a [identifier] [class noun]'', using \textbf{rare-token identifiers} with  negligible prior meaning.
         \item \textbf{Prior-preservation loss:} Compare outputs with pre-generated class images to retain general class knowledge, preventing \textit{language drift}.
@@ -84,7 +87,12 @@
         \vspace{0.4em}
 
         \begin{center}
-          \includegraphics[scale=1.4]{loss_diagram.png}
+          \begin{minipage}{0.9\linewidth}
+            \centering
+            \includegraphics[scale=1.1]{loss_diagram.png}\
+        
+            {\footnotesize DreamBooth Loss Components and Fine-Tuning Process}
+          \end{minipage}
         \end{center}
 
       }
@@ -137,7 +145,10 @@
       }
 
       \pbox{Additional Exploration: Logo Fine-Tuning}{
-        We fine-tuned on a custom \textbf{CS4782} course logo (5 augmented variants). Direct generation faithfully reproduced the logo's structure and text with only minor color and number drift, but contextualization failed: placement prompts (shirt, mug) caused the model to render the raw token \texttt{sks} as literal glyphs rather than the learned logo.
+        We fine-tuned on a custom \textbf{CS4782} course logo (5 augmented variants). 
+        \begin{citemize}
+            \item Direct generation faithfully reproduced the logo's structure and text with only minor color and number drift. \item Contextualization failed: placement prompts (shirt, mug) caused the model to render the raw token \texttt{sks} as literal glyphs rather than the learned logo.
+        \end{citemize}
 
         \vspace{0.2em}
         \begin{center}
@@ -176,8 +187,7 @@
       \pbox{Future Work}{
         \begin{citemize}
         \item \textbf{Scale to 30 subjects:} Enables direct baseline comparison.
-        \item \textbf{Explore Hyperparameters:} Characterize the under/overfit boundary by varying learning rate and step count.
-        \item \textbf{LoRA comparison:} Quantify the fidelity gap between full fine-tuning and an equivalent LoRA adapter.
+        \item \textbf{Explore Hyperparameters:} Vary the learning rate and step count to identify the boundary between underfitting and overfitting.
         \item \textbf{Multi-subject:} Bind multiple identifiers in one fine-tune.
         \end{citemize}
       }
@@ -202,7 +212,9 @@
             \midrule
             \textbf{Mean}     & \textbf{0.598}          & \textbf{0.861}            & \textbf{0.265}            \\
             \midrule
-            \textit{Expected} & \textit{0.65--0.70}     & \textit{0.78--0.82}       & \textit{0.28--0.32}       \\
+            \textit{Real Images} & \textit{0.774}     & \textit{0.885}       & \textit{N/A}       \\
+            \midrule
+            \textit{Dreambooth Paper (SD)} & \textit{0.668}     & \textit{0.803}       & \textit{0.305}       \\
             \bottomrule
           \end{tabular}
         \end{center}
@@ -216,7 +228,7 @@
             \includegraphics[width=0.45\linewidth,height=0.45\linewidth,keepaspectratio]{imgs/dog_ref.jpg} &
             \includegraphics[width=0.45\linewidth,height=0.45\linewidth,keepaspectratio]{imgs/cornellmerch2.png} \\[2pt]
             {\small Reference subject}                                                                     &
-            {\small ``a [v] dog with Cornell merch''}                                                            \\
+            {\small ``a photo of [v] dog with Cornell merch''}                                                            \\
           \end{tabular}
         \end{center}
 
