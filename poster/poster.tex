@@ -63,7 +63,8 @@
         \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos of the subject, it fine-tunes a diffusion model, allowing it to generate images of the subject in various contexts based on the textual prompt.
 
         \begin{center}
-          \includegraphics{demo_img.png}
+
+          \includegraphics[scale=0.65]{fine_tuning_inference.png}
         \end{center}
 
         \vspace{0.4em}
@@ -83,7 +84,7 @@
         \vspace{0.4em}
 
         \begin{center}
-          \includegraphics[scale=1.8]{loss_diagram.png}
+          \includegraphics[scale=1.4]{loss_diagram.png}
         \end{center}
 
       }
@@ -131,15 +132,10 @@
 
         \vspace{0.2em}
         \textbf{Hyperparameters:}
+        800 training steps, learning rate: $5\times 10^{-6}$, resolution: $512\times 512$, prior weight $\lambda=1.0$, $100$ class images, $5$ instance images, optimizer: 8-bit AdamW.
         \begin{center}
           \small
-          \begin{tabular}{@{}lr@{\hspace{1.5em}}lr@{}}
-            \toprule
-            Training steps        & 800                & Prior weight $\lambda$ & 1.0         \\
-            Learning rate         & $5\times10^{-6}$   & Class / instance imgs  & 100 / 5     \\
-            Resolution            & $512^2$            & Optimizer              & 8-bit AdamW \\
-            \bottomrule
-          \end{tabular}
+
         \end{center}
       }
 
@@ -203,8 +199,8 @@
           \end{tabular}
         \end{center}
 
-        \vspace{0.2em}
-        \textbf{Qualitative examples:}
+        \vspace{0.6em}
+        \textbf{Examples:}
 
         \vspace{0.2em}
         \begin{center}
