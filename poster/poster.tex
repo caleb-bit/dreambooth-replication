@@ -43,98 +43,84 @@
   \begin{center}
     \vspace{0.3em}
     {\fontsize{52}{58}\selectfont\bfseries\color{cornellred}
-    Replicating DreamBooth: Subject-Driven Fine-Tuning of Stable Diffusion}\\[0.3em]
+      Replicating DreamBooth: Subject-Driven Fine-Tuning of Stable Diffusion}\\[0.3em]
     {\Large Ryan Qiu \quad Gordon Mei \quad Caleb Shim \quad Evan Cui}\\[0.1em]
-    {\large Cornell University}\\[0.3em]
+    {\large Cornell University}\\
     {\color{cornellred}\rule{0.96\textwidth}{2.5pt}}
+    \vspace{-0.8em}
   \end{center}
-
-  \vspace{0.2em}
 
   % ── 4 columns ────────────────────────────────────────────────────────────────
   \begin{columns}[t]
 
     %--- COL 1 ---
-    \begin{column}{0.24\textwidth}
+    \begin{column}{0.32\textwidth}
 
-      \pbox{Introduction \& Motivation}{
-        Generative text-to-image models produce photorealistic images from text prompts,
-        but cannot render a \emph{specific} subject without additional fine-tuning.
-
-        \vspace{0.4em}
-        \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos, it
-        personalizes a diffusion model so a rare token (\texttt{sks}) binds permanently
-        to that subject's appearance.
+      \pbox{Motivation}{
+        Generative text-to-image models produce photorealistic images from text prompts, but cannot render a \emph{specific} subject.
 
         \vspace{0.4em}
-        \textbf{Goal.} Replicate DreamBooth on \texttt{stable-diffusion-v1-5} (SD~1.5)
-        and verify quantitative metrics fall in the expected range.
+        \textbf{DreamBooth} (Ruiz et al., 2023) solves this: given 3--5 photos of the subject, it fine-tunes a diffusion model, allowing it to generate images of the subject in various contexts based on the textual prompt.
+
+        \begin{center}
+          \includegraphics{demo_img.png}
+        \end{center}
+
+
 
         \vspace{0.4em}
-        \textbf{Target metrics for SD~1.5:}
-        \begin{citemize}
-        \item DINO $\approx$ 0.65--0.70 \hfill {\small identity similarity}
-        \item CLIP-I $\approx$ 0.78--0.82 \hfill {\small image similarity}
-        \item CLIP-T $\approx$ 0.28--0.32 \hfill {\small text alignment}
-        \end{citemize}
-
-        \vspace{0.4em}
+        \textbf{Goal.} Replicate DreamBooth on \texttt{stable-diffusion-v1-5} (SD~1.5) and verify quantitative metrics.
       }
 
-      \pbox{Original Paper Summary}{
-        Ruiz et al.\ (2023) fine-tune an entire diffusion model on a tiny personal
-        dataset while training on generated class images to prevent catastrophic
-        forgetting.
+      \pbox{Background}{
 
         \vspace{0.4em}
-        \textbf{Key contributions:}
+        \textbf{Key ideas:}
         \begin{citemize}
-        \item \textbf{Rare-token binding:} \texttt{sks} has negligible prior meaning,
-          so the model freely associates it with the new subject.
-        \item \textbf{Prior preservation loss:} Regularizes against 200 generated
-          class images to retain general class knowledge.
+          \item \textbf{Image labeling}: Label subjects with ``a [identifier] [class noun]'', using \textbf{rare-token identifiers} with  negligible prior meaning.
+          \item \textbf{Prior-preservation loss:} Compare outputs with pre-generated class images to retain general class knowledge, preventing \textit{language drift}.
+          \item \textbf{Metrics:} Ensure \textit{subject fidelity} with DINO \& CLIP-I and \textit{prompt fidelity} with CLIP-T
         \end{citemize}
 
-        \vspace{0.3em}
-        The paper used Google Imagen (closed source). SD~1.5 is the standard substitute
-        and scores slightly lower due to smaller scale.
+        \vspace{0.4em}
+
+        \begin{center}
+          \includegraphics[scale=1.8]{loss_diagram.png}
+        \end{center}
+
       }
 
       \pbox{Implementation Details}{
         \begin{citemize}
-        \item \textbf{fp32 UNet:} Frozen components run fp16; trainable UNet stays
-          fp32 to prevent gradient underflow --- a critical fix not explicit in the paper.
-        \item \textbf{Memory:} Gradient checkpointing + 8-bit Adam keeps peak VRAM
-          under 13~GB on a 16~GB T4.
-        \item \textbf{Resumability:} Every round skips completed artifacts, required
-          for Colab's 12-hour session limit.
-        \item \textbf{Checkpoint:} Only the UNet is persisted; eval loads base SD
-          weights and swaps in the fine-tuned UNet.
+          \item \textbf{Dataset:} Substituted Google Imagen with SD~1.5
+          \item \textbf{Subjects:} \texttt{dog}, \texttt{dog2}, \texttt{backpack} from the official DreamBooth dataset (google/dreambooth).
+          \item \textbf{Compute:} Google Colab T4 GPU ($\sim$30--40 min per subject). Metric computation on local CPU.
+
         \end{citemize}
       }
 
     \end{column}
 
     %--- COL 2 ---
-    \begin{column}{0.24\textwidth}
+    \begin{column}{0.32\textwidth}
 
       \pbox{Methodology}{
         \textbf{Architecture.} SD~1.5 has three components:
         \begin{citemize}
-        \item \textbf{VAE} ($\sim$83M) --- encodes/decodes images; \emph{frozen}.
-        \item \textbf{UNet} ($\sim$860M) --- latent denoiser; \textbf{fine-tuned}.
-        \item \textbf{CLIP encoder} ($\sim$123M) --- encodes prompts; \emph{frozen}.
+          \item \textbf{VAE} ($\sim$83M) --- encodes/decodes images; \emph{frozen}.
+          \item \textbf{UNet} ($\sim$860M) --- latent denoiser; \textbf{fine-tuned}.
+          \item \textbf{CLIP encoder} ($\sim$123M) --- encodes prompts; \emph{frozen}.
         \end{citemize}
 
         \vspace{0.5em}
         \textbf{Training loop (per step):}
         \begin{cenumerate}
-        \item Encode instance + class images to latents via frozen VAE.
-        \item Encode prompts via frozen CLIP text encoder.
-        \item Sample noise $\varepsilon \sim \mathcal{N}(0,I)$ and timestep $t$.
-        \item Add noise: $z_t = \sqrt{\bar\alpha_t}\,z + \sqrt{1{-}\bar\alpha_t}\,\varepsilon$.
-        \item Predict: $\hat\varepsilon = \mathrm{UNet}(z_t, t, \tau_\theta(P))$.
-        \item Compute combined loss; backprop through UNet only.
+          \item Encode instance + class images to latents via frozen VAE.
+          \item Encode prompts via frozen CLIP text encoder.
+          \item Sample noise $\varepsilon \sim \mathcal{N}(0,I)$ and timestep $t$.
+          \item Add noise: $z_t = \sqrt{\bar\alpha_t}\,z + \sqrt{1{-}\bar\alpha_t}\,\varepsilon$.
+          \item Predict: $\hat\varepsilon = \mathrm{UNet}(z_t, t, \tau_\theta(P))$.
+          \item Compute combined loss; backprop through UNet only.
         \end{cenumerate}
 
         \vspace{0.4em}
@@ -151,32 +137,50 @@
         \begin{center}
           \begin{tabular}{ll}
             \toprule
-            \textbf{Parameter} & \textbf{Value} \\
+            \textbf{Parameter}     & \textbf{Value}     \\
             \midrule
-            Training steps         & 800 \\
+            Training steps         & 800                \\
             Learning rate          & $5 \times 10^{-6}$ \\
-            Resolution             & $512 \times 512$ \\
-            Prior weight $\lambda$ & 1.0 \\
-            Class images           & 100 \\
-            Instance images        & 5 \\
-            Optimizer              & 8-bit AdamW \\
+            Resolution             & $512 \times 512$   \\
+            Prior weight $\lambda$ & 1.0                \\
+            Class images           & 100                \\
+            Instance images        & 5                  \\
+            Optimizer              & 8-bit AdamW        \\
             \bottomrule
           \end{tabular}
         \end{center}
 
         \vspace{0.4em}
-        \textbf{Subjects:} \texttt{dog}, \texttt{dog2}, \texttt{backpack} from the
-        official DreamBooth dataset (google/dreambooth).
 
-        \vspace{0.4em}
-        \textbf{Compute:} Google Colab T4 GPU ($\sim$30--40 min per subject).
-        Metric computation on local CPU.
       }
+
+      
+      \pbox{Additional Explorations}{
+        \vspace{0.5em}
+        \textbf{1. Logo fine-tuning.}
+        Testing the ability to reproduce graphic assets like brand logos across novel contexts --- product mockups, merchandise, etc. Key differences: sharp edges, flat colors, and precise geometry. Exact graphic fidelity $>$ perceptual identity.
+
+        \vspace{0.5em}
+        \textbf{2. Art style transfer.}
+        Testing the ability to transfer stylistic attributes from a specific artist's artwork. Abstract visual properties $>$ concrete physical subject.
+      }
+
+      
+      \pbox{Future Work}{
+        \begin{citemize}
+          \item \textbf{Text encoder fine-tuning:} Unfreezing CLIP may improve binding for unusual subjects (as in the original paper).
+          \item \textbf{Scale to 30 subjects:} Enables direct comparison with the paper's SD~1.5 baseline.
+          \item \textbf{Hyperparameter sweep:} Characterize the under/overfit boundary by varying learning rate and step count.
+          \item \textbf{LoRA comparison:} Quantify the fidelity gap between full fine-tuning and an equivalent LoRA adapter.
+          \item \textbf{Multi-subject:} Bind multiple identifiers in one fine-tune.
+        \end{citemize}
+      }
+
 
     \end{column}
 
     %--- COL 3 ---
-    \begin{column}{0.24\textwidth}
+    \begin{column}{0.32\textwidth}
 
       \pbox{Results}{
         \textbf{Quantitative metrics} (5 prompts $\times$ 4 samples per subject):
@@ -185,15 +189,15 @@
         \begin{center}
           \begin{tabular}{lccc}
             \toprule
-            \textbf{Subject} & \textbf{DINO}$\uparrow$ & \textbf{CLIP-I}$\uparrow$ & \textbf{CLIP-T}$\uparrow$ \\
+            \textbf{Subject}  & \textbf{DINO}$\uparrow$ & \textbf{CLIP-I}$\uparrow$ & \textbf{CLIP-T}$\uparrow$ \\
             \midrule
-            dog         & 0.716 & 0.867 & 0.275 \\
-            dog2        & 0.542 & 0.828 & 0.247 \\
-            backpack    & 0.536 & 0.887 & 0.274 \\
+            dog               & 0.716                   & 0.867                     & 0.275                     \\
+            dog2              & 0.542                   & 0.828                     & 0.247                     \\
+            backpack          & 0.536                   & 0.887                     & 0.274                     \\
             \midrule
-            \textbf{Mean} & \textbf{0.598} & \textbf{0.861} & \textbf{0.265} \\
+            \textbf{Mean}     & \textbf{0.598}          & \textbf{0.861}            & \textbf{0.265}            \\
             \midrule
-            \textit{Expected} & \textit{0.65--0.70} & \textit{0.78--0.82} & \textit{0.28--0.32} \\
+            \textit{Expected} & \textit{0.65--0.70}     & \textit{0.78--0.82}       & \textit{0.28--0.32}       \\
             \bottomrule
           \end{tabular}
         \end{center}
@@ -206,49 +210,20 @@
           \begin{tabular}{cc}
             \includegraphics[width=0.42\linewidth,height=0.42\linewidth,keepaspectratio]{imgs/dog_ref.jpg} &
             \includegraphics[width=0.42\linewidth,height=0.42\linewidth,keepaspectratio]{imgs/cornellmerch2.png} \\[2pt]
-            {\small Reference subject} &
-            {\small ``a [v] dog with Cornell merch''} \\
+            {\small Reference subject}                                                                     &
+            {\small ``a [v] dog with Cornell merch''}                                                            \\
           \end{tabular}
         \end{center}
 
         \vspace{0.5em}
         \textbf{Qualitative observations:}
         \begin{citemize}
-        \item Subject identity preserved across novel backgrounds and lighting.
-        \item Fine tuning both the UNet and the text encoder leads to sub-optimal, overfit results
+          \item Subject identity preserved across novel backgrounds and lighting.
+          \item Fine tuning both the UNet and the text encoder leads to sub-optimal, overfit results
         \end{citemize}
       }
 
-      \pbox{Additional Explorations}{
-        Beyond subject-driven generation, we investigated two extended applications
-        of the DreamBooth fine-tuning approach:
 
-        \vspace{0.5em}
-        \textbf{1. Logo fine-tuning.}
-        Fine-tuning on a brand logo to test whether the model can reliably reproduce
-        graphic assets across novel contexts --- product mockups, merchandise, and
-        t-shirt designs. Unlike photographic subjects, logos have sharp edges, flat
-        colors, and precise geometry, which tests a different failure mode: the model
-        must preserve exact graphic fidelity rather than perceptual identity.
-
-        \vspace{0.5em}
-        \textbf{2. Art style transfer.}
-        Fine-tuning on a curated set of artworks from a specific artist to test
-        whether DreamBooth can transfer stylistic attributes --- brushwork, color
-        palette, composition --- to new prompts. This probes the model's ability to
-        bind abstract visual properties rather than a concrete physical subject.
-
-        \vspace{0.4em}
-        Both explorations use the same training pipeline as the subject experiments,
-        with \texttt{sks} bound to the logo or style respectively. Results are
-        evaluated qualitatively; CLIP-T measures prompt adherence and CLIP-I
-        measures similarity to reference examples.
-      }
-
-    \end{column}
-
-    %--- COL 4 ---
-    \begin{column}{0.24\textwidth}
 
       \pbox{Conclusion}{
         We replicated the core DreamBooth algorithm on SD~1.5, writing the training
@@ -257,40 +232,27 @@
         \vspace{0.4em}
         \textbf{Key takeaways:}
         \begin{citemize}
-        \item Prior preservation is essential --- without it, the model collapses
+          \item Prior preservation is essential --- without it, the model collapses
           to the subject for all class prompts.
-        \item fp32 UNet is critical; fp16 gradients underflow and break identity binding.
-        \item Full UNet fine-tuning achieves strong fidelity with only 5 instance
+          \item fp32 UNet is critical; fp16 gradients underflow and break identity binding.
+          \item Full UNet fine-tuning achieves strong fidelity with only 5 instance
           images and 800 steps.
-        \item 8-bit Adam + gradient checkpointing makes this viable on a free Colab T4.
-        \item Metrics fall within the expected SD~1.5 range, confirming faithful
+          \item 8-bit Adam + gradient checkpointing makes this viable on a free Colab T4.
+          \item Metrics fall within the expected SD~1.5 range, confirming faithful
           replication.
-        \end{citemize}
-      }
-
-      \pbox{Future Work}{
-        \begin{citemize}
-        \item \textbf{Text encoder fine-tuning:} Unfreezing CLIP may improve binding
-          for unusual subjects (as in the original paper).
-        \item \textbf{Scale to 30 subjects:} Enables direct comparison with the
-          paper's SD~1.5 baseline.
-        \item \textbf{Hyperparameter sweep:} Characterize the under/overfit boundary
-          by varying learning rate and step count.
-        \item \textbf{LoRA comparison:} Quantify the fidelity gap between full
-          fine-tuning and an equivalent LoRA adapter.
-        \item \textbf{Multi-subject:} Bind multiple identifiers in one fine-tune.
         \end{citemize}
       }
 
       \pbox{References}{
         \small\setlength{\parskip}{4pt}
-        [1] Ruiz et al.\ \textit{DreamBooth.} CVPR 2023.\\
-        [2] Rombach et al.\ \textit{Latent Diffusion Models.} CVPR 2022.\\
-        [3] Radford et al.\ \textit{CLIP.} ICML 2021.\\
-        [4] Caron et al.\ \textit{DINO.} ICCV 2021.\\
-        [5] \url{https://github.com/huggingface/diffusers}\\
-        [6] \url{https://github.com/google/dreambooth}
+        $\text{[1]}$ Ruiz et al.\ \textit{DreamBooth.} CVPR 2023.\\
+        $\text{[2]}$ Rombach et al.\ \textit{Latent Diffusion Models.} CVPR 2022.\\
+        $\text{[3]}$ Radford et al.\ \textit{CLIP.} ICML 2021.\\
+        $\text{[4]}$ Caron et al.\ \textit{DINO.} ICCV 2021.\\
+        $\text{[5]}$ \url{https://github.com/huggingface/diffusers}\\
+        $\text{[6]}$ \url{https://github.com/google/dreambooth}
       }
+
 
     \end{column}
 
