@@ -2,6 +2,9 @@ subjects:
   - name: backpack
     class_name: backpack
     identifier: sks
+  - name: logo
+    class_name: logo
+    identifier: sks
 
 hyperparameters:
   resolution: 512

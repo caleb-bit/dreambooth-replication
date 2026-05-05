@@ -6,8 +6,9 @@ classes:
   - dog
   - cat
   - backpack
+  - logo
 
-num_images: 200
+num_images: 100
 prompt_template: "a photo of a {class_name}"
 num_inference_steps: 50
 guidance_scale: 7.5
