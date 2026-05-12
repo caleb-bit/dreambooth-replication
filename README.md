@@ -1,135 +1,128 @@
-# dreambooth-replication
+# Replicating DreamBooth: Subject-Driven Fine-Tuning of Stable Diffusion
 
-## Running on Colab
+**Ryan Qiu, Gordon Mei, Caleb Shim, Evan Cui** · Cornell University · CS4782 Deep Learning
 
-### Setup (run once per session)
+A from-scratch replication of [DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation](https://arxiv.org/abs/2208.12242) (Ruiz et al., CVPR 2023) on Stable Diffusion v1.5. Given 3–5 reference photos, DreamBooth fine-tunes a diffusion model to bind a specific subject to a rare identifier token, enabling generation of that subject in novel contexts via text prompts.
 
-```python
-# Cell 1 — clone & install
-!git clone https://github.com/caleb-bit/dreambooth-replication.git
-%cd dreambooth-replication
-!git lfs pull   # pull subject/class images stored in LFS
-!pip install -q diffusers transformers accelerate bitsandbytes Pillow torchvision
+---
+
+## Chosen Result
+
+We reproduce **Table 2** of the DreamBooth paper: subject fidelity (DINO ↑, CLIP-I ↑) and prompt fidelity (CLIP-T ↑) for fine-tuned SD 1.5 models. The paper reports DINO 0.668 / CLIP-I 0.803 / CLIP-T 0.305 for SD, demonstrating that subject identity and prompt-following can coexist in a fine-tuned diffusion model.
+
+---
+
+## GitHub Contents
+
 ```
-
-```python
-# Cell 2 — mount Drive (keeps checkpoints across sessions)
-from google.colab import drive
-drive.mount("/content/drive")
-
-WORK_DIR = "/content/drive/MyDrive/dreambooth"   # change to your Drive path
-!mkdir -p "{WORK_DIR}/checkpoints"
-```
-
-### Training
-
-```python
-# Cell 3 — train a subject
-!python main.py train \
-    --config configs/subjects.yaml \
-    --subject dog \
-    --instance-dir artifacts/subject_images \
-    --class-dir artifacts/class_images \
-    --output-dir "{WORK_DIR}/checkpoints" \
-    --device cuda
-```
-
-Logs print every 50 steps to stderr. If the session disconnects and you rerun, already-completed subjects are skipped automatically.
-
-### Generating a test image from a checkpoint
-
-```python
-import torch
-from diffusers import StableDiffusionPipeline
-
-CHECKPOINT = "/content/drive/MyDrive/dreambooth/checkpoints/dog"
-PROMPT = "a photo of sks dog on the beach"
-
-pipe = StableDiffusionPipeline.from_pretrained(
-    CHECKPOINT, torch_dtype=torch.float16, safety_checker=None
-).to("cuda")
-pipe.enable_attention_slicing()
-
-image = pipe(
-    PROMPT,
-    num_inference_steps=50,
-    guidance_scale=7.5,
-    generator=torch.Generator("cuda").manual_seed(42),
-).images[0]
-
-image.save("test_output.png")
-image  # displays inline
+code/        Training, evaluation, and generation scripts + configs
+data/        Dataset info and download instructions
+artifacts/   Subject images (Git LFS) and generated class images
+results/     Metric JSONs and qualitative sample outputs
+poster/      Conference-style poster (PDF)
+report/      2-page project summary report (PDF)
 ```
 
 ---
 
-Ryan Qiu, Gordon Mei, Caleb Shim, Evan Cui
+## Re-implementation Details
 
-> Note: Subject = specific dog. Class = dogs
+- **Model:** Stable Diffusion v1.5 (`runwayml/stable-diffusion-v1-5`). UNet (~860M params) fine-tuned; VAE and CLIP text encoder frozen.
+- **Training objective:** Combined instance loss + prior-preservation loss weighted by λ=1.0 to prevent language drift.
+- **Rare-token identifier:** `sks` — a token with negligible prior semantics used to bind the subject.
+- **Dataset:** `dog`, `dog2`, `backpack` from [google/dreambooth](https://github.com/google/dreambooth); 5 instance images and 100 SD-generated class images per subject.
+- **Metrics:** DINO (ViT-S/16), CLIP-I and CLIP-T (CLIP ViT-L/14).
+- **Key finding:** UNet must be kept in FP32 — FP16 causes silent gradient underflow with no visible error.
 
-`main.py` contains commands to run different parts of the project. I separated this into three parts
+---
 
-**paths are relative to where the command is run**
+## Reproduction Steps
 
-```
-python main.py generate --config=CONFIGPATH
-```
+**Requirements:** Python 3.10+, CUDA GPU (T4 or better recommended), ~35 min per subject.
 
-training uses ~200 images of the broader class (e.g. "dog") as a regularization set. This command generates those using the base SD model. settings are in `configs/generate.yaml`
-
-```
-python main.py train \
- --config=CONFIGPATH  \
- --subject=SUBJECT \
- --instance-dir=INSTANCEDIR \
- --class-dir=CLASSDIR \
- --output-dir=OUTPUTDIR \
- --device=DEVICE \
+```bash
+git clone https://github.com/caleb-bit/dreambooth-replication.git
+cd dreambooth-replication
+git lfs pull
+pip install -r code/requirements.txt
 ```
 
-This spins up the training loop defined in `train.py` with the given config, subject class, etc.
-
-subject should be something like "cat6" or "dog2". They must match a name in the config.
-
-The script looks for instance images (jpg or png) at `INSTANCEDIR/SUBJECT/` and class images at `CLASSDIR/CLASSNAME/`.
-
-Skips subjects whose checkpoint already exists in `OUTPUTDIR/`, so it's safe to rerun after a crash. You should use the path to subjects.yaml for CONFIG PATH.
-
-```
-# Stage 1 — generate images from checkpoints
-!python main.py eval \
- --config=/content/dreambooth-replication/configs/subjects.yaml \
- --stage=generate \
- --subject=dog \
- --checkpoint-dir="/content/drive/MyDrive/dreambooth/checkpoints" \
- --instance-dir=artifacts/subject_images \
- --output-dir="/content/drive/MyDrive/dreambooth/eval_output" \
- --device=cuda
+**Step 1 — Generate class regularization images** (skip if using the provided `artifacts/class_images/`):
+```bash
+python code/main.py generate --config code/configs/generate.yaml
 ```
 
-```
-# Stage 2 — compute DINO / CLIP-I / CLIP-T metrics
-!python main.py eval \
- --config=/content/dreambooth-replication/configs/subjects.yaml \
- --stage=metrics \
- --subject=dog \
- --checkpoint-dir="/content/drive/MyDrive/dreambooth/checkpoints" \
- --instance-dir=artifacts/subject_images \
- --output-dir="/content/drive/MyDrive/dreambooth/eval_output" \
- --results-dir="/content/drive/MyDrive/dreambooth/results" \
- --device=cuda
+**Step 2 — Fine-tune on a subject:**
+```bash
+python code/main.py train \
+    --config code/configs/subjects.yaml \
+    --subject dog \
+    --instance-dir artifacts/subject_images \
+    --class-dir artifacts/class_images \
+    --output-dir checkpoints \
+    --device cuda
 ```
 
-eval has two stages:
+**Step 3 — Generate evaluation images from the checkpoint:**
+```bash
+python code/main.py eval \
+    --config code/configs/subjects.yaml \
+    --stage generate \
+    --subject dog \
+    --checkpoint-dir checkpoints \
+    --instance-dir artifacts/subject_images \
+    --output-dir artifacts/eval \
+    --device cuda
+```
 
-_generate_ loads the fine-tuned checkpoint for each subject and runs it on 25 prompts (e.g. "a sks dog on the beach"), saving 4 images per prompt. Also generates the same prompts w/o identifier
+**Step 4 — Compute DINO / CLIP-I / CLIP-T metrics:**
+```bash
+python code/main.py eval \
+    --config code/configs/subjects.yaml \
+    --stage metrics \
+    --subject dog \
+    --checkpoint-dir checkpoints \
+    --instance-dir artifacts/subject_images \
+    --output-dir artifacts/eval \
+    --results-dir results \
+    --device cpu
+```
 
-_metrics_ computes three scores against the original instance images:
+---
 
-- **DINO**: how much the generated images look like the specific subject (identity similarity). Needs generated subjects + original subjects
-- **CLIP-I**: similar to DINO. Needs generated subjects + original subjects
-- **CLIP-T**: how well the generated images match the text prompt. Needs prompt text + generated subjects
+## Results / Insights
 
-reference images for DINO and CLIP-I are the original training photos of the subject, not the class images. results written to `RESULTSDIR/metrics.json`.
+| Subject | DINO ↑ | CLIP-I ↑ | CLIP-T ↑ |
+|---|---|---|---|
+| dog | 0.716 | 0.867 | 0.275 |
+| dog2 | 0.542 | 0.828 | 0.247 |
+| backpack | 0.536 | 0.887 | 0.274 |
+| **Ours (mean)** | **0.598** | **0.861** | **0.265** |
+| Paper (SD 1.5) | 0.668 | 0.803 | 0.305 |
 
-### Logo training planning
+Our CLIP-I (0.861) exceeds the paper's reported value; DINO and CLIP-T fall slightly below, consistent with evaluating 3 subjects rather than the paper's full 30.
+
+![Reference dog and generated output](results/samples/sksdogatcornell.png)
+
+---
+
+## Conclusion
+
+Full UNet fine-tuning with prior preservation achieves strong subject fidelity in under 40 minutes on a free GPU. Three non-obvious implementation details proved critical: (1) prior preservation is load-bearing, not optional — ablating it causes complete identity collapse; (2) FP16 training of the UNet causes silent gradient underflow; (3) freezing the text encoder prevents overfitting and improves compositional outputs.
+
+---
+
+## References
+
+- Ruiz et al. *DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation.* CVPR 2023.
+- Rombach et al. *High-Resolution Image Synthesis with Latent Diffusion Models.* CVPR 2022.
+- Radford et al. *Learning Transferable Visual Models From Natural Language Supervision.* ICML 2021.
+- Caron et al. *Emerging Properties in Self-Supervised Vision Transformers.* ICCV 2021.
+- HuggingFace Diffusers: https://github.com/huggingface/diffusers
+- DreamBooth Dataset: https://github.com/google/dreambooth
+
+---
+
+## Acknowledgements
+
+This project was completed as part of **CS4782: Deep Learning** at Cornell University (Spring 2025). Training was performed on Google Colab (T4 GPU). We used the HuggingFace `diffusers` library and the official `google/dreambooth` dataset.
