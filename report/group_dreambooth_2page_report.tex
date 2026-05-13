@@ -32,16 +32,17 @@
 \vspace{2pt}\hrule\vspace{6pt}
 
 %% ─── 1. INTRODUCTION ───────────────────────────────────────────────────────────
-\section{Introduction}
+\section{Introduction/Motivation}
 
-Large-scale text-to-image diffusion models synthesize photorealistic images from prompts but cannot render a \emph{specific} subject unseen during training. \textbf{DreamBooth}~\cite{ruiz2023dreambooth} (Ruiz et al., CVPR 2023) addresses this by fine-tuning the model on 3--5 reference images, binding a particular subject to a rare identifier token and enabling compositional generation in novel contexts.
+Large-scale text-to-image diffusion models synthesize photorealistic images from prompts but cannot render a \emph{specific} subject unseen during training. Prompting ``a photo of my dog in Paris'' produces a plausible dog, but not the specific dog that the user wants. Even exhaustive description (breed, color, distinguishing markings) cannot uniquely identify a specific instance, since the model has no reference to bind to. \textbf{DreamBooth}~\cite{ruiz2023dreambooth} (Ruiz et al., CVPR 2023) addresses this by fine-tuning the model on 3--5 reference images, binding a particular subject to a rare identifier token and enabling compositional generation in novel contexts.
 
 We replicate DreamBooth on Stable Diffusion v1.5 (SD~1.5)~\cite{rombach2022ldm}, implementing the full training pipeline from scratch. Our goal is to reproduce the paper's reported quantitative metrics on SD~1.5 and document the implementation details necessary to achieve them.
+
 
 %% ─── 2. CHOSEN RESULT ──────────────────────────────────────────────────────────
 \section{Chosen Result}
 
-We target the quantitative evaluation from Table~2 of the DreamBooth paper, which reports subject fidelity (DINO~\cite{caron2021dino}, CLIP-I~\cite{radford2021clip}) and prompt fidelity (CLIP-T) for fine-tuned SD~1.5 models across 30 subjects. The paper reports mean scores of DINO~0.668, CLIP-I~0.803, and CLIP-T~0.305 for SD. This result is central to the paper's contribution: it demonstrates that subject identity and prompt-following can coexist in a fine-tuned diffusion model. Reproducing it validates that our pipeline correctly implements both the rare-token binding and prior preservation mechanisms.
+We target the quantitative evaluation from Table~2 of the DreamBooth paper, which reports subject fidelity (DINO~\cite{caron2021dino}, CLIP-I~\cite{radford2021clip}) and prompt fidelity (CLIP-T) for fine-tuned SD~1.5 models across 30 subjects. The paper reports mean scores of DINO~0.668, CLIP-I~0.803, and CLIP-T~0.305 for SD. These results show that a fine-tuned model can preserve specific subject identity while remaining responsive to novel prompts. Reproducing these scores provides evidence that our pipeline correctly implements key training components, such as rare-token binding and prior preservation mechanisms.
 
 %% ─── 3. METHODOLOGY ────────────────────────────────────────────────────────────
 \section{Methodology}
