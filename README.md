@@ -108,7 +108,7 @@ Our CLIP-I (0.861) exceeds the paper's reported value; DINO and CLIP-T fall slig
 
 ## Conclusion
 
-Full UNet fine-tuning with prior preservation achieves strong subject fidelity in under 40 minutes on a free GPU. Three implementation details proved critical: (1) prior preservation is critical (as shown in the paper) — ablating it causes complete identity collapse; (2) FP16 training of the UNet causes silent gradient underflow; (3) freezing the text encoder prevents overfitting and improves compositional outputs.
+Full UNet fine-tuning with prior preservation achieves strong subject fidelity in under 40 minutes on a free GPU. Three implementation details proved critical: (1) prior preservation is necessary — ablating it causes complete identity collapse; (2) FP16 training of the UNet causes silent gradient underflow with no error or warning; (3) freezing the text encoder prevents overfitting and improves compositional outputs. Finally, logo fine-tuning reproduced the graphic faithfully in direct generation but failed at context placement — placement prompts caused the model to render the identifier token as literal glyphs rather than the learned image.
 
 ---
 

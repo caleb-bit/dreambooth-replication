@@ -95,15 +95,15 @@ The most notable gap is DINO variance across subjects: \texttt{dog} scores 0.716
 %% ─── 5. REFLECTIONS ────────────────────────────────────────────────────────────
 \section{Reflections}
 
-\textbf{Prior preservation is load-bearing, not optional.} When we ablated prior preservation, training did not degrade gracefully---the subject displaced the model's entire class representation, and general generation became incoherent. The prior loss is not a soft regularizer; it is necessary for stable training.
+\textbf{Prior preservation.} Prior loss is a critical part of the loss function that ensures that the model maintains its class representations, as observed by the ablation.
 
-\textbf{FP16 training of the UNet causes a silent failure.} Using half-precision for the UNet caused gradient updates to underflow, effectively stopping weight updates. The loss curve appeared normal and no exceptions were raised, but outputs showed no identity binding. Keeping the UNet in FP32 (while frozen components use FP16) resolved the issue immediately. This failure is invisible without knowing to check for it.
+\textbf{FP16 causes silent gradient underflow.} Using half-precision for the UNet caused gradient updates to fall below the representable range, halting weight updates with no error or warning. Keeping the UNet in FP32 resolved this.
 
-\textbf{Freezing the text encoder improves results.} Jointly fine-tuning the UNet and CLIP text encoder led to overfitting: outputs lost compositional flexibility and failed to follow novel prompts. The text encoder already encodes language structure; fine-tuning it allows the model to ``cheat'' by redefining token semantics rather than adjusting the visual pathway. Keeping it frozen constrains learning to where it matters.
+\textbf{Freezing the text encoder.} Jointly fine-tuning the UNet and CLIP text encoder led to overfitting: outputs lost compositional flexibility and ignored novel prompts. The text encoder already encodes language structure; updating it causes the model to redefine token semantics rather than adjust the visual pathway.
 
-\textbf{Extensions and limitations.} We applied DreamBooth to a course logo graphic (\texttt{CS4782}) and to artistic style images. Logo fine-tuning faithfully reproduced the graphic in direct generation but failed at context placement (e.g., ``a mug with a \texttt{sks} logo''), with the model rendering the identifier as literal glyphs rather than the learned graphic. Style transfer showed partial aesthetic transfer but inconsistent fidelity, highlighting that DreamBooth's subject-binding objective is poorly matched to distributed visual properties like style.
+\textbf{Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') reproduced the graphic faithfully across samples, with only minor color variation. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic. It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
 
-\textbf{Future work.} Scaling to 30 subjects would enable a direct benchmark comparison. Ablations over step count and learning rate could map the under/overfitting boundary. Multi-subject binding---associating multiple identifiers in a single fine-tune---is an extension not covered by our replication.
+\textbf{Future work.} Scaling to 30 subjects enables direct benchmark comparison; ablations over step count and learning rate would map the underfitting/overfitting boundary.
 
 %% ─── REFERENCES ──────────────────────────────────────────────────────────────
 \begin{thebibliography}{9}
