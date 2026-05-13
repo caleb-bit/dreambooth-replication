@@ -121,6 +121,9 @@ Full UNet fine-tuning with prior preservation achieves strong subject fidelity i
 - Caron et al. *Emerging Properties in Self-Supervised Vision Transformers.* ICCV 2021.
 - HuggingFace Diffusers: https://github.com/huggingface/diffusers
 - DreamBooth Dataset: https://github.com/google/dreambooth
+- MoMA — Vincent van Gogh: https://www.moma.org/artists/2206-vincent-van-gogh
+- National Gallery of Art — Vincent van Gogh: https://www.nga.gov/collection/artist-info.1349.html
+- Art Institute of Chicago — The Bedroom: https://www.artic.edu/artworks/28560/the-bedroom
 
 ---
 
