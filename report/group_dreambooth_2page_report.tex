@@ -177,6 +177,50 @@ One notable challenge we encountered was the long time needed to generate the hu
   \label{fig:logo}
 \end{figure}
 
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-normal-paintings/person1.png}
+    \caption{Reference}
+  \end{subfigure}
+  \hspace{0.5em}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-van-gogh-style-paintings/person3.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/aphotoofanskslogo2.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/aphotoofanskslogo4.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/anskslogo.png}
+    \caption{}
+  \end{subfigure}
+  \\[0.5em]
+  \begin{subfigure}[b]{0.2\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/amanwearinganskslogo.png}
+    \caption{``a man wearing\\ a sks logo''}
+  \end{subfigure}
+  \hspace{1em}
+  \begin{subfigure}[b]{0.2\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/amugwithaphotoofanskslogo2.png}
+    \caption{``a mug with\\ a sks logo''}
+  \end{subfigure}
+  \caption{Logo fine-tuning results. \textbf{Top row:} reference logo followed by four samples from ``a photo of a \texttt{sks} logo'' --- direct generation reproduces the graphic with mixed success. \textbf{Bottom row:} context placement prompts cause the model to render \texttt{sks} as literal glyphs rather than the learned logo.}
+  \label{fig:logo}
+\end{figure}
+
 \newpage
 %% ─── REFERENCES ──────────────────────────────────────────────────────────────
 \begin{thebibliography}{9}
@@ -215,6 +259,21 @@ HuggingFace.
 Google.
 \newblock DreamBooth dataset.
 \newblock \url{https://github.com/google/dreambooth}, 2022.
+
+\bibitem{moma_vangogh}
+Museum of Modern Art (MoMA).
+\newblock Vincent van Gogh.
+\newblock \url{https://www.moma.org/artists/2206-vincent-van-gogh}, Accessed May 12, 2026.
+
+\bibitem{nga_vangogh}
+National Gallery of Art.
+\newblock Vincent van Gogh.
+\newblock \url{https://www.nga.gov/collection/artist-info.1349.html}, Accessed May 12, 2026.
+
+\bibitem{artic_bedroom}
+Art Institute of Chicago.
+\newblock The Bedroom.
+\newblock \url{https://www.artic.edu/artworks/28560/the-bedroom}, Accessed May 12, 2026.
 
 \end{thebibliography}
 
