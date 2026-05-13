@@ -93,6 +93,9 @@ Our mean DINO (0.598) falls slightly below the paper's 0.668, which is expected 
 
 The most notable gap is DINO variance across subjects: \texttt{dog} scores 0.716 (near the paper's mean) while \texttt{dog2} and \texttt{backpack} score around 0.54, suggesting that the model's ability to maintain feature identity is highly dependent on the reference images. The backpack scores high on CLIP-I (0.887) despite lower DINO, indicating that semantic similarity is preserved even where exact feature identity is weaker.
 
+Overall, this replication demonstrated that we are able to achieve significant evaluation thresholds for subject-driven generation even when training on a smaller diffusion model like SD~1.5 on a smaller set of generated samples.
+
+
 %% ─── 5. REFLECTIONS ────────────────────────────────────────────────────────────
 \section{Reflections}
 
