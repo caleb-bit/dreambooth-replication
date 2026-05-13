@@ -105,9 +105,7 @@ Overall, this replication demonstrated that we are able to achieve significant e
 
 \textbf{Freezing the text encoder.} The text encoder's job is to map language to a fixed semantic space, a structure that is already well-learned and should not change. Fine-tuning it allows the model to take a shortcut: rather than learning to visually bind the subject through the UNet, it just redefines what \texttt{sks} means at the language level, which destroys its ability to compose with novel prompts.
 
-\textbf{Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') reproduced the graphic faithfully across samples, with only minor color variation. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic. It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
-
-\textbf{Future work.} Scaling to 30 subjects enables direct benchmark comparison; ablations over step count and learning rate would map the underfitting/overfitting boundary.
+\textbf{Extension: Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') was able to reproduce the graphic faithfully, but not with complete accuracy. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic (see Figure~\ref{fig:logo}). It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
 
 %% ─── REFERENCES ──────────────────────────────────────────────────────────────
 \begin{thebibliography}{9}
@@ -166,6 +164,50 @@ Google.
   \end{subfigure}
   \caption{Reference image and a generated image using the fine-tuned model, demonstrating subject identity preserved in a novel context.}
   \label{fig:qual}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../artifacts/subject_images/logo/logo.png}
+    \caption{Reference}
+  \end{subfigure}
+  \hspace{0.5em}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/aphotoofanskslogo1.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/aphotoofanskslogo2.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/aphotoofanskslogo4.png}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.13\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/anskslogo.png}
+    \caption{}
+  \end{subfigure}
+  \\[0.5em]
+  \begin{subfigure}[b]{0.2\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/amanwearinganskslogo.png}
+    \caption{``a man wearing\\ a sks logo''}
+  \end{subfigure}
+  \hspace{1em}
+  \begin{subfigure}[b]{0.2\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/logotests/amugwithaphotoofanskslogo2.png}
+    \caption{``a mug with\\ a sks logo''}
+  \end{subfigure}
+  \caption{Logo fine-tuning results. \textbf{Top row:} reference logo followed by four samples from ``a photo of a \texttt{sks} logo'' --- direct generation reproduces the graphic with mixed success. \textbf{Bottom row:} context placement prompts cause the model to render \texttt{sks} as literal glyphs rather than the learned logo.}
+  \label{fig:logo}
 \end{figure}
 
 \end{document}
