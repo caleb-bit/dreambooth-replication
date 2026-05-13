@@ -107,47 +107,6 @@ Overall, this replication demonstrated that we are able to achieve significant e
 
 \textbf{Extension: Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') was able to reproduce the graphic faithfully, but not with complete accuracy. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic (see Figure~\ref{fig:logo}). It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
 
-%% ─── REFERENCES ──────────────────────────────────────────────────────────────
-\begin{thebibliography}{9}
-
-\bibitem{ruiz2023dreambooth}
-N.~Ruiz, Y.~Li, V.~Jampani, Y.~Pritch, M.~Rubinstein, and K.~Aberman.
-\newblock DreamBooth: Fine tuning text-to-image diffusion models for subject-driven generation.
-\newblock In \textit{CVPR}, 2023.
-
-\bibitem{rombach2022ldm}
-R.~Rombach, A.~Blattmann, D.~Lorenz, P.~Esser, and B.~Ommer.
-\newblock High-resolution image synthesis with latent diffusion models.
-\newblock In \textit{CVPR}, 2022.
-
-\bibitem{radford2021clip}
-A.~Radford et al.
-\newblock Learning transferable visual models from natural language supervision.
-\newblock In \textit{ICML}, 2021.
-
-\bibitem{caron2021dino}
-M.~Caron et al.
-\newblock Emerging properties in self-supervised vision transformers.
-\newblock In \textit{ICCV}, 2021.
-
-\bibitem{dettmers2022llm}
-T.~Dettmers, M.~Lewis, Y.~Belkada, and L.~Zettlemoyer.
-\newblock LLM.int8(): 8-bit matrix multiplication for transformers at scale.
-\newblock In \textit{NeurIPS}, 2022.
-
-\bibitem{diffusers}
-HuggingFace.
-\newblock Diffusers: State-of-the-art diffusion models.
-\newblock \url{https://github.com/huggingface/diffusers}, 2022.
-
-\bibitem{dreambooth_dataset}
-Google.
-\newblock DreamBooth dataset.
-\newblock \url{https://github.com/google/dreambooth}, 2022.
-
-\end{thebibliography}
-
-%% ─── FIGURES (excluded from 2-page limit) ──────────────────────────────────────
 \newpage
 \begin{figure}[h]
   \centering
@@ -209,5 +168,49 @@ Google.
   \caption{Logo fine-tuning results. \textbf{Top row:} reference logo followed by four samples from ``a photo of a \texttt{sks} logo'' --- direct generation reproduces the graphic with mixed success. \textbf{Bottom row:} context placement prompts cause the model to render \texttt{sks} as literal glyphs rather than the learned logo.}
   \label{fig:logo}
 \end{figure}
+
+\newpage
+%% ─── REFERENCES ──────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+
+\bibitem{ruiz2023dreambooth}
+N.~Ruiz, Y.~Li, V.~Jampani, Y.~Pritch, M.~Rubinstein, and K.~Aberman.
+\newblock DreamBooth: Fine tuning text-to-image diffusion models for subject-driven generation.
+\newblock In \textit{CVPR}, 2023.
+
+\bibitem{rombach2022ldm}
+R.~Rombach, A.~Blattmann, D.~Lorenz, P.~Esser, and B.~Ommer.
+\newblock High-resolution image synthesis with latent diffusion models.
+\newblock In \textit{CVPR}, 2022.
+
+\bibitem{radford2021clip}
+A.~Radford et al.
+\newblock Learning transferable visual models from natural language supervision.
+\newblock In \textit{ICML}, 2021.
+
+\bibitem{caron2021dino}
+M.~Caron et al.
+\newblock Emerging properties in self-supervised vision transformers.
+\newblock In \textit{ICCV}, 2021.
+
+\bibitem{dettmers2022llm}
+T.~Dettmers, M.~Lewis, Y.~Belkada, and L.~Zettlemoyer.
+\newblock LLM.int8(): 8-bit matrix multiplication for transformers at scale.
+\newblock In \textit{NeurIPS}, 2022.
+
+\bibitem{diffusers}
+HuggingFace.
+\newblock Diffusers: State-of-the-art diffusion models.
+\newblock \url{https://github.com/huggingface/diffusers}, 2022.
+
+\bibitem{dreambooth_dataset}
+Google.
+\newblock DreamBooth dataset.
+\newblock \url{https://github.com/google/dreambooth}, 2022.
+
+\end{thebibliography}
+
+%% ─── FIGURES (excluded from 2-page limit) ──────────────────────────────────────
+
 
 \end{document}
