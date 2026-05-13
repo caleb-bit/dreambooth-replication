@@ -126,13 +126,6 @@ One notable challenge we encountered was the long time needed to generate the hu
 
 \textbf{Extension: Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation reproduced the graphic with mixed success, but context placement failed: prompts like ``a man wearing a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic (see Figure~\ref{fig:logo}). Including contextual mockups in the reference set (e.g., the logo composited onto a shirt) may help the model learn in-context placement.
 
-\textbf{Extension: Style transfer.} Rather than binding a subject \emph{instance}, we wanted to see if DreamBooth can also bind an artistic \emph{style}. We applied this to Van Gogh using 600 steps and a lower learning rate ($2{\times}10^{-6}$), as the standard hyperparameters caused severe overfitting (every landscape prompt reproduced Starry Night). Even with reduced training, slight overfitting remained, but the model qualitatively succeeded at style transfer while retaining the ability to generate non-Van Gogh paintings when the identifier was omitted.
-
-\textbf{Future work.} We want to scale to 30 subjects, giving us a direct benchmark comparison against the paper's reported results. In addition, we would like to try multi-subject fine-tuning, where we bind multiple rare tokens (e.g., \texttt{sks} and \texttt{xyz}) to distinct subjects in a single fine-tune. This would test whether the model can compose two learned identities simultaneously.
-
-%% ─── FIGURES (excluded from 2-page limit) ──────────────────────────────────────
-
-
 \begin{figure}[h]
   \centering
   \begin{subfigure}[b]{0.13\linewidth}
@@ -176,6 +169,43 @@ One notable challenge we encountered was the long time needed to generate the hu
   \caption{Logo fine-tuning results. \textbf{Top row:} reference logo followed by four samples from ``a photo of a \texttt{sks} logo'' --- direct generation reproduces the graphic with mixed success. \textbf{Bottom row:} context placement prompts cause the model to render \texttt{sks} as literal glyphs rather than the learned logo.}
   \label{fig:logo}
 \end{figure}
+
+\textbf{Extension: Style transfer.} Rather than binding a subject \emph{instance}, we wanted to see if DreamBooth can also bind an artistic \emph{style}. We applied this to Van Gogh using 600 steps and a lower learning rate ($2{\times}10^{-6}$), as the standard hyperparameters caused severe overfitting (every landscape prompt reproduced Starry Night). Even with reduced training, slight overfitting remained, but the model qualitatively succeeded at style transfer while retaining the ability to generate non-Van Gogh paintings when the identifier was omitted; see Figure~\ref{fig:styletransfer}.
+
+\begin{figure}[h]
+  \centering
+  \begin{subfigure}[b]{0.15\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../artifacts/subject_images/painting/style1.png}
+    \caption{Reference}
+  \end{subfigure}
+  \hspace{0.5em}
+  \begin{subfigure}[b]{0.15\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-van-gogh-style-paintings/beach1.png}
+    \caption{Beach (sks)}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.15\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-van-gogh-style-paintings/car1.png}
+    \caption{Car (sks)}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.15\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-van-gogh-style-paintings/person1.png}
+    \caption{Person (sks)}
+  \end{subfigure}
+  \hspace{0.5em}
+  \begin{subfigure}[b]{0.15\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../results/style-transfer-tests/generated-normal-paintings/person1.png}
+    \caption{Person (no sks)}
+  \end{subfigure}
+  \caption{Style transfer results. \textbf{Left:} one of the five Van Gogh reference paintings used for fine-tuning. \textbf{Center three:} novel scenes generated with the \texttt{sks} identifier, rendered in Van Gogh's style. \textbf{Right:} the same person prompt without the identifier, confirming the model retains generic painting ability.}
+  \label{fig:styletransfer}
+\end{figure}
+
+\textbf{Future work.} We want to scale to 30 subjects, giving us a direct benchmark comparison against the paper's reported results. In addition, we would like to try multi-subject fine-tuning, where we bind multiple rare tokens (e.g., \texttt{sks} and \texttt{xyz}) to distinct subjects in a single fine-tune. This would test whether the model can compose two learned identities simultaneously.
 
 \newpage
 %% ─── REFERENCES ──────────────────────────────────────────────────────────────
