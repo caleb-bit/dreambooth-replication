@@ -49,7 +49,7 @@ We target the quantitative evaluation from Table~2 of the DreamBooth paper, whic
 
 \textbf{Architecture.} SD~1.5 has three components: a VAE (${\approx}$83M params) that encodes images to latents, a UNet (${\approx}$860M params) that denoises in latent space, and a CLIP text encoder (${\approx}$123M params). We fine-tune the UNet only; both the VAE and CLIP text encoder are frozen throughout training.
 
-\textbf{Training objective.} Instance images are captioned as ``a photo of \texttt{sks} [class]'', where \texttt{sks} is a rare identifier with negligible prior semantics. At each step, both instance and class images are encoded to latents, noise is sampled and added, and the UNet predicts the noise. The combined loss is:
+\textbf{Training objective.} Instance images are captioned as ``a photo of \texttt{sks} [class]'', where \texttt{sks} is a rare identifier with negligible prior semantics. The model has no strong associations with this token, so it can be used to represent the new subject. The class label (e.g. ``dog'') anchors \texttt{sks} within the correct semantic area, ensuring the model understands the general category while learning to associate the rare token with the specific instance. At each step, both instance and class images are encoded to latents, noise is sampled and added, and the UNet predicts the noise. The combined loss is:
 \[
   \mathcal{L} =
   \underbrace{\|\hat{\varepsilon}_\text{inst} - \varepsilon_\text{inst}\|^2}_{\text{instance loss}}
@@ -104,6 +104,8 @@ The most notable gap is DINO variance across subjects: \texttt{dog} scores 0.716
 \textbf{Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') reproduced the graphic faithfully across samples, with only minor color variation. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic. It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
 
 \textbf{Future work.} Scaling to 30 subjects enables direct benchmark comparison; ablations over step count and learning rate would map the underfitting/overfitting boundary.
+
+\newpage
 
 %% ─── REFERENCES ──────────────────────────────────────────────────────────────
 \begin{thebibliography}{9}
