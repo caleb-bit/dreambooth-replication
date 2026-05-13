@@ -32,6 +32,7 @@ report/      2-page project summary report (PDF)
 - **Rare-token identifier:** `sks` — a token with negligible prior semantics used to bind the subject.
 - **Dataset:** `dog`, `dog2`, `backpack` from [google/dreambooth](https://github.com/google/dreambooth); 5 instance images and 100 SD-generated class images per subject.
 - **Metrics:** DINO (ViT-S/16), CLIP-I and CLIP-T (CLIP ViT-L/14).
+- **Extensions:** Logo fine-tuning (CS4782 course logo); style transfer via Van Gogh paintings (600 steps, lr 2×10⁻⁶).
 - **Key finding:** UNet must be kept in FP32 — FP16 causes silent gradient underflow with no visible error.
 
 ---
@@ -108,7 +109,7 @@ Our CLIP-I (0.861) exceeds the paper's reported value; DINO and CLIP-T fall slig
 
 ## Conclusion
 
-Full UNet fine-tuning with prior preservation achieves strong subject fidelity in under 40 minutes on a free GPU. Three implementation details proved critical: (1) prior preservation is necessary — ablating it causes complete identity collapse; (2) FP16 training of the UNet causes silent gradient underflow with no error or warning; (3) freezing the text encoder prevents overfitting and improves compositional outputs. Finally, logo fine-tuning reproduced the graphic faithfully in direct generation but failed at context placement — placement prompts caused the model to render the identifier token as literal glyphs rather than the learned image.
+Full UNet fine-tuning with prior preservation achieves strong subject fidelity in under 40 minutes on a free GPU. Three implementation details proved critical: (1) prior preservation is necessary — ablating it causes complete identity collapse; (2) FP16 training of the UNet causes silent gradient underflow with no error or warning; (3) freezing the text encoder prevents overfitting and improves compositional outputs. Logo fine-tuning reproduced the graphic in direct generation but failed at context placement, with the model rendering the identifier as literal glyphs. Style transfer via Van Gogh fine-tuning qualitatively succeeded with reduced hyperparameters, with the model retaining generic painting ability when the identifier was omitted.
 
 ---
 
