@@ -107,6 +107,48 @@ Overall, this replication demonstrated that we are able to achieve significant e
 
 \textbf{Extension: Logo fine-tuning.} We applied DreamBooth to a custom \texttt{CS4782} course logo using 5 augmented variants as instance images, with \texttt{sks} as the identifier and \texttt{logo} as the class noun. Direct generation (``a photo of a \texttt{sks} logo'') was able to reproduce the graphic faithfully, but not with complete accuracy. Context placement failed: prompts such as ``a man wearing a \texttt{sks} logo'' or ``a mug with a \texttt{sks} logo'' caused the model to render \texttt{sks} as literal glyphs rather than the learned graphic (see Figure~\ref{fig:logo}). It may be useful to include contextual mockups in the reference set (e.g., the logo composited onto a shirt, paired with a matching prompt), so the model sees the subject in context during training rather than only as an isolated graphic.
 
+\textbf{Style transfer.} We also applied Dreambooth to generate new paintings in the art style of Van Gogh, with \texttt{sks} as the identifier and \texttt{painting} as the class noun. One important lesson is the necessity of tweaking the hyperparameters, since a style is more abstract than an object. Our model for style transfer was trained for 600 steps with learning rate $2{\times}10^{-6}$, as training with the hyperparameters used for the dog and backpack models led to significant overfitting (i.e. every prompt for Van Gogh style landscape led to Starry Night being generated). Still, some of the visible lines in the Van Gogh-style backgrounds like the city paintings suggest the model is slightly overfit, as the model tries to force the generated skyline to match the subject images too hard. Despite this, the model qualitatively seemed to perform well at generating Van Gogh-style paintings, such as the beach, car and person paintings in the results folder. The model was also still able to generate paintings in styles other than Van Gogh, as seen in the paintings of a person generated without using the identifier. The key takeaway is that Dreambooth can be used effectively for style transfer. However, it is important to note that Dreambooth may not be the best option, as LoRA models for style transfer also exist that may be faster to train and/or produce better results, though we did not do much research into them.
+%% ─── REFERENCES ──────────────────────────────────────────────────────────────
+\begin{thebibliography}{9}
+
+\bibitem{ruiz2023dreambooth}
+N.~Ruiz, Y.~Li, V.~Jampani, Y.~Pritch, M.~Rubinstein, and K.~Aberman.
+\newblock DreamBooth: Fine tuning text-to-image diffusion models for subject-driven generation.
+\newblock In \textit{CVPR}, 2023.
+
+\bibitem{rombach2022ldm}
+R.~Rombach, A.~Blattmann, D.~Lorenz, P.~Esser, and B.~Ommer.
+\newblock High-resolution image synthesis with latent diffusion models.
+\newblock In \textit{CVPR}, 2022.
+
+\bibitem{radford2021clip}
+A.~Radford et al.
+\newblock Learning transferable visual models from natural language supervision.
+\newblock In \textit{ICML}, 2021.
+
+\bibitem{caron2021dino}
+M.~Caron et al.
+\newblock Emerging properties in self-supervised vision transformers.
+\newblock In \textit{ICCV}, 2021.
+
+\bibitem{dettmers2022llm}
+T.~Dettmers, M.~Lewis, Y.~Belkada, and L.~Zettlemoyer.
+\newblock LLM.int8(): 8-bit matrix multiplication for transformers at scale.
+\newblock In \textit{NeurIPS}, 2022.
+
+\bibitem{diffusers}
+HuggingFace.
+\newblock Diffusers: State-of-the-art diffusion models.
+\newblock \url{https://github.com/huggingface/diffusers}, 2022.
+
+\bibitem{dreambooth_dataset}
+Google.
+\newblock DreamBooth dataset.
+\newblock \url{https://github.com/google/dreambooth}, 2022.
+
+\end{thebibliography}
+
+%% ─── FIGURES (excluded from 2-page limit) ──────────────────────────────────────
 \newpage
 \begin{figure}[h]
   \centering
