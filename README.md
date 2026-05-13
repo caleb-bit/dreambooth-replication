@@ -8,7 +8,7 @@ A from-scratch replication of [DreamBooth: Fine Tuning Text-to-Image Diffusion M
 
 ## Chosen Result
 
-We reproduce **Table 2** of the DreamBooth paper: subject fidelity (DINO ↑, CLIP-I ↑) and prompt fidelity (CLIP-T ↑) for fine-tuned SD 1.5 models. The paper reports DINO 0.668 / CLIP-I 0.803 / CLIP-T 0.305 for SD, demonstrating that subject identity and prompt-following can coexist in a fine-tuned diffusion model.
+We reproduce **Table 2** of the DreamBooth paper: subject fidelity (DINO, CLIP-I) and prompt fidelity (CLIP-T) for fine-tuned SD 1.5 models. The paper reports DINO 0.668 / CLIP-I 0.803 / CLIP-T 0.305 for SD, demonstrating that subject identity and prompt-following can coexist in a fine-tuned diffusion model.
 
 ---
 
